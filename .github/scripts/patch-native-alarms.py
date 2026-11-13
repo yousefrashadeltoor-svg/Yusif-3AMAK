@@ -178,14 +178,14 @@ s = p.read_text(encoding="utf-8")
 if "canScheduleExactAlarms():" not in s:
     s = replace_once(
         s,
-        '  scheduleAlarm(opts: { id: string; time: string; date?: string; days: number[]; label: string; soundUri?: string; vibrate: boolean; snooze: number }): Promise<void>;',
-        '  scheduleAlarm(opts: { id: string; time: string; date?: string; days: number[]; label: string; soundUri?: string; vibrate: boolean; snooze: number }): Promise<void>;\n  canScheduleExactAlarms(): Promise<{ granted: boolean }>;\n  requestExactAlarmPermission(): Promise<{ granted: boolean; settingsOpened?: boolean }>;',
+        '            scheduleAlarm(opts: { id:string; time:string; date?:string; days:number[]; label:string; soundUri?:string; vibrate:boolean; snooze:number; enabled?:boolean }): Promise<{scheduled?:boolean}>;',
+        '            scheduleAlarm(opts: { id:string; time:string; date?:string; days:number[]; label:string; soundUri?:string; vibrate:boolean; snooze:number; enabled?:boolean }): Promise<{scheduled?:boolean}>;\\n            canScheduleExactAlarms(): Promise<{granted:boolean}>;\\n            requestExactAlarmPermission(): Promise<{granted:boolean;settingsOpened?:boolean}>;',
         "native bridge exact-alarm interface"
     )
     s = replace_once(
         s,
-        '  scheduleAlarm: (opts: Parameters<DayflowNative["scheduleAlarm"]>[0]) => plugin()?.scheduleAlarm?.(opts),',
-        '  scheduleAlarm: (opts: Parameters<DayflowNative["scheduleAlarm"]>[0]) => plugin()?.scheduleAlarm?.(opts),\n  canScheduleExactAlarms: () => plugin()?.canScheduleExactAlarms?.(),\n  requestExactAlarmPermission: () => plugin()?.requestExactAlarmPermission?.(),',
+        '            scheduleAlarm:(o:Parameters<DayflowNative["scheduleAlarm"]>[0])=>call("scheduleAlarm",o),',
+        '            scheduleAlarm:(o:Parameters<DayflowNative["scheduleAlarm"]>[0])=>call("scheduleAlarm",o),\\n            canScheduleExactAlarms:()=>call("canScheduleExactAlarms"),\\n            requestExactAlarmPermission:()=>call("requestExactAlarmPermission"),',
         "native bridge exact-alarm methods"
     )
 p.write_text(s, encoding="utf-8")
