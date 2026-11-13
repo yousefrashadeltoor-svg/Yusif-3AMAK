@@ -332,7 +332,11 @@ jobs:
                   }
           '''
           ps=ps.replace('        try {' + chr(10) + '            DownloadManager.Request request', '        try {' + chr(10) + guard + '            DownloadManager.Request request')
+          ps=ps.replace('intent.putExtra("size", call.getInt("size",100));','intent.putExtra("size", (int)(112 * call.getDouble("size", 1.0)));')
           plugin.write_text(ps)
+          overlay=Path("android/app/src/main/java/app/dayflow/android/CompanionOverlayService.java")
+          osrc=overlay.read_text().replace('Math.max(56,Math.min(180,size)),Build.VERSION', 'Math.max(90,Math.min(230,(int)(size*1.28))),Build.VERSION')
+          overlay.write_text(osrc)
           widget=Path("android/app/src/main/java/app/dayflow/android/DayflowWidgetProvider.java")
           ws=widget.read_text().replace("import android.appwidget.*;", "import android.appwidget.*;import android.app.PendingIntent;")
           widget.write_text(ws)
