@@ -23,6 +23,17 @@ jobs:
           jobs = data["jobs"]
           puts "Jobs: #{jobs&.keys&.inspect}"
           abort "GitHub Actions jobs map is missing or empty" unless jobs.is_a?(Hash) && !jobs.empty?
-          abort "build-apk job is missing" unless jobs.key?("build-apk")
-          puts "YAML syntax and jobs structure valid"
+          job = jobs["build-apk"]
+          abort "build-apk job is missing" unless job.is_a?(Hash)
+          puts "Job keys: #{job.keys.inspect}"
+          steps = job["steps"]
+          abort "build-apk steps must be a non-empty array" unless steps.is_a?(Array) && !steps.empty?
+          puts "Steps count: #{steps.length}"
+          steps.each_with_index do |step, index|
+            abort "Step #{index + 1} is not a mapping" unless step.is_a?(Hash)
+            abort "Step #{index + 1} has no run or uses" unless step.key?("run") || step.key?("uses")
+            bad = step.keys - %w[name id if uses run shell with env working-directory timeout-minutes continue-on-error]
+            abort "Step #{index + 1} has unknown keys: #{bad.inspect}" unless bad.empty?
+          end
+          puts "YAML and core job/step structure valid"
           RUBY
