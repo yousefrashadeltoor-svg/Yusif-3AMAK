@@ -237,7 +237,8 @@ jobs:
           p.write_text(s)
           # Correct prayer calculations for the selected city's civil date and daylight-saving offset.
           p=Path("src/lib/prayer.ts"); s=p.read_text()
-          s=s.replace('  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },','  { lat: 30.0131, lng: 31.2089, city: "Giza", cityAr: "الجيزة", tz: 2 },' + chr(10) + '  { lat: 30.1792, lng: 31.2056, city: "Qalyub", cityAr: "قليوب", tz: 2 },' + chr(10) + '  { lat: 30.4667, lng: 31.1833, city: "Benha", cityAr: "بنها", tz: 2 },' + chr(10) + '  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },')
+          s=s.replace('  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },','  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },')
+          s=s.replace('  { lat: 51.5074, lng: -0.1278, city: "London", cityAr: "لندن", tz: 0 },','  { lat: 51.5074, lng: -0.1278, city: "London", cityAr: "لندن", tz: 0 },' + chr(10) + '  { lat: 30.0131, lng: 31.2089, city: "Giza", cityAr: "الجيزة", tz: 2 },' + chr(10) + '  { lat: 30.1792, lng: 31.2056, city: "Qalyub", cityAr: "قليوب", tz: 2 },' + chr(10) + '  { lat: 30.4667, lng: 31.1833, city: "Benha", cityAr: "بنها", tz: 2 },')
           s=s.replace('let y = date.getFullYear(), m = date.getMonth() + 1; const d = date.getDate();','let y = date.getUTCFullYear(), m = date.getUTCMonth() + 1; const d = date.getUTCDate();')
           s=s.replace('  const jd = julian(date);','''  const zone = loc.city === "London" ? "Europe/London" : loc.tz === 3 ? "Asia/Riyadh" : loc.tz === 4 ? "Asia/Dubai" : "Africa/Cairo";
           const parts = new Intl.DateTimeFormat("en-GB", { timeZone: zone, year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(date);
