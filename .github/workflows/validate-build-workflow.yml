@@ -16,4 +16,13 @@ jobs:
       - name: Parse workflow YAML
         shell: bash
         run: |
-          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/build-apk.yml"); puts "YAML syntax valid"'
+          ruby - <<'RUBY'
+          require "yaml"
+          data = YAML.load_file(".github/workflows/build-apk.yml")
+          puts "Root keys: #{data.keys.inspect}"
+          jobs = data["jobs"]
+          puts "Jobs: #{jobs&.keys&.inspect}"
+          abort "GitHub Actions jobs map is missing or empty" unless jobs.is_a?(Hash) && !jobs.empty?
+          abort "build-apk job is missing" unless jobs.key?("build-apk")
+          puts "YAML syntax and jobs structure valid"
+          RUBY
