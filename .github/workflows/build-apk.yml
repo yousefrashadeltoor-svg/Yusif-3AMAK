@@ -376,7 +376,7 @@ jobs:
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
           # Add the Android overlay, widget selection handoff, and persistent task reminders.
-          base64 --decode "$GITHUB_WORKSPACE/android-native/repair-scripts.tar.gz.b64" | tar -xz -C "$GITHUB_WORKSPACE/.github/scripts"
+          tar -xzf "$GITHUB_WORKSPACE/android-native/repair-scripts.tar.gz.b64" -C "$GITHUB_WORKSPACE/.github/scripts"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
