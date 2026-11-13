@@ -214,6 +214,28 @@ jobs:
             showNotification:(o:Parameters<DayflowNative["showNotification"]>[0])=>call("showNotification",o)
           };
           EOF
+          # Patch the archived app source to persist selected Android ringtone URIs and use native notifications.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("src/lib/store.ts"); s=p.read_text()
+          s=s.replace('sound: { source: SoundSource; title: string }','sound: { source: SoundSource; title: string; uri?: string }')
+          s=s.replace('label: alarm.label, vibrate: alarm.vibrate, snooze: alarm.snooze','label: alarm.label, soundUri: alarm.sound.uri, vibrate: alarm.vibrate, snooze: alarm.snooze')
+          p.write_text(s)
+          p=Path("src/screens/Alarms.tsx"); s=p.read_text()
+          s=s.replace('label: a.label, vibrate: a.vibrate, snooze: a.snooze','label: a.label, soundUri: a.sound.uri, vibrate: a.vibrate, snooze: a.snooze')
+          s=s.replace('const [nativeTones, setNativeTones] = useState<string[] | null>(null);','const [nativeTones, setNativeTones] = useState<Array<{title:string;uri:string}> | null>(null);')
+          s=s.replace('setNativeTones(r.tones.map((x) => x.title))','setNativeTones(r.tones.map((x) => ({title:x.title,uri:x.uri})))')
+          s=s.replace('const device = nativeTones || [t("Default alarm (device)", "منبه الجهاز الافتراضي"), t("Default ringtone (device)", "نغمة الرنين الافتراضية"), t("Default notification (device)", "صوت الإشعار الافتراضي")];','const device = nativeTones || [t("Default alarm (device)", "منبه الجهاز الافتراضي"), t("Default ringtone (device)", "نغمة الرنين الافتراضية"), t("Default notification (device)", "صوت الإشعار الافتراضي")].map(title=>({title,uri:""}));')
+          s=s.replace('{device.map((d) => <button key={d} onClick={() => onPick({ source: "device", title: d })}', '{device.map((d) => <button key={d.uri || d.title} onClick={() => onPick({ source: "device", title: d.title, uri: d.uri })}')
+          s=s.replace('<span className="flex-1">{d}</span>{value.title === d &&', '<span className="flex-1">{d.title}</span>{value.title === d.title &&')
+          p.write_text(s)
+          p=Path("src/screens/Me.tsx"); s=p.read_text()
+          s=s.replace('import { nativeBridge } from "../lib/nativeBridge";','import { nativeBridge, isAndroidApk } from "../lib/nativeBridge";')
+          s=s.replace('  const test = async () => {','  const test = async () => {\n    if (isAndroidApk()) { try { await nativeBridge.requestNotificationsPermission?.(); await nativeBridge.showNotification?.({ title: "DAYFLOW — " + t("notification test", "اختبار الإشعارات"), body: s.notif.preview ? t("A reminder is ready", "عندك تذكير") : t("A reminder is ready", "عندك تذكير"), channel: "dayflow_reminders", id: 4101 }); setTested(t("Sent. Check your notification tray.", "اتبعت. بص في الإشعارات.")); } catch (e) { setTested(String(e)); } return; }')
+          const browserNote='      <div className="mt-3"><Honest>{t("Browser notifications are real and permission-based. Scheduled background reminders need the Android notification system (not built in this preview). Interactive buttons (Complete / Snooze / Open) are Android-only.", "إشعارات المتصفح حقيقية وبتطلب إذن. التذكيرات المجدولة في الخلفية محتاجة نظام إشعارات أندرويد (مش مبني في المعاينة). الأزرار التفاعلية (تم / غفوة / افتح) لأندرويد فقط.")}</Honest></div>'
+          s=s.replace(browserNote,'      {!isAndroidApk() && <div className="mt-3"><Honest>{t("Browser notifications are real and permission-based. Scheduled background reminders need the Android notification system.", "إشعارات المتصفح حقيقية وبتطلب إذن. التذكيرات المجدولة في الخلفية محتاجة نظام إشعارات أندرويد.")}</Honest></div>}')
+          p.write_text(s)
+          PY
           node gen-assets.mjs
           curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
             "https://images.unsplash.com/photo-1517359795165-71871b9e3266?auto=format&fit=crop&fm=jpg&ixid=NHwxMjA3fDA%3D&ixlib=rb-4.1.0&q=82&w=1920" \
