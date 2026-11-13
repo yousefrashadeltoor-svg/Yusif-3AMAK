@@ -338,7 +338,7 @@ jobs:
           widget.write_text(ws)
           overlay=Path("android/app/src/main/java/app/dayflow/android/CompanionOverlayService.java")
           osrc=overlay.read_text()
-          osrc=osrc.replace("import android.graphics.PixelFormat;", "import android.graphics.PixelFormat;\\nimport android.graphics.Canvas;\\nimport android.graphics.Paint;\\nimport android.graphics.RectF;\\nimport android.graphics.Color;")
+          osrc=osrc.replace("import android.graphics.PixelFormat;", "import android.graphics.PixelFormat;" + chr(10) + "import android.graphics.Canvas;" + chr(10) + "import android.graphics.Paint;" + chr(10) + "import android.graphics.RectF;" + chr(10) + "import android.graphics.Path;")
           osrc=osrc.replace('TextView v=new TextView(this); v.setText("DAYFLOW");v.setTextColor(0xffffffff);v.setTextSize(12);v.setGravity(17);v.setBackgroundColor(0xdd20242b);v.setAlpha(Math.max(.25f,Math.min(1f,opacity)));','View v=new NativeRobotView(this); v.setContentDescription("DAYFLOW floating companion"); v.setAlpha(Math.max(.25f,Math.min(1f,opacity)));')
           robot_view="""
           private static class NativeRobotView extends View {
@@ -361,7 +361,7 @@ jobs:
           }
           """
           if "class NativeRobotView" not in osrc:
-            osrc=osrc.replace(" @Override public void onDestroy()",robot_view+"\\n @Override public void onDestroy()")
+            osrc=osrc.replace(" @Override public void onDestroy()",robot_view+chr(10)+" @Override public void onDestroy()")
           overlay.write_text(osrc)
           manifest=Path("android/app/src/main/AndroidManifest.xml")
           s=manifest.read_text()
