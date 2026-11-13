@@ -269,7 +269,7 @@ jobs:
           for p in permissions:
             tag=f'<uses-permission android:name="{p}" />'
             if p not in s:
-              s=s.replace("<application", f"    {tag}\\n    <application", 1)
+              s=s.replace("<application", f"    {tag}" + chr(10) + "    <application", 1)
           components="""
               <activity android:name="app.dayflow.android.AlarmRingActivity" android:exported="false" android:showWhenLocked="true" android:turnScreenOn="true" android:excludeFromRecents="true" />
               <receiver android:name="app.dayflow.android.AlarmReceiver" android:exported="false" />
@@ -284,13 +284,13 @@ jobs:
                   <meta-data android:name="android.appwidget.provider" android:resource="@xml/dayflow_widget_info"/>
               </receiver>
           """
-          if "DayflowWidgetProvider" not in s: s=s.replace("</application>",components+"\\n</application>")
+          if "DayflowWidgetProvider" not in s: s=s.replace("</application>",components+chr(10)+"</application>")
           manifest.write_text(s)
           activity=Path("android/app/src/main/java/app/dayflow/android/MainActivity.java")
           if activity.exists():
             a=activity.read_text()
             if "registerPlugin(DayflowBridgePlugin.class)" not in a:
-              a=a.replace("super.onCreate(savedInstanceState);","registerPlugin(DayflowBridgePlugin.class);\\n        super.onCreate(savedInstanceState);")
+              a=a.replace("super.onCreate(savedInstanceState);","registerPlugin(DayflowBridgePlugin.class);" + chr(10) + "        super.onCreate(savedInstanceState);")
               activity.write_text(a)
           else: raise SystemExit("Capacitor MainActivity.java not found; native plugin registration was not applied")
           PY
