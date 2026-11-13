@@ -296,6 +296,20 @@ jobs:
           """
           if "requestNotificationsPermission" not in ps: ps=ps.replace("    @PluginMethod public void showNotification",permission_methods+chr(10)+"    @PluginMethod public void showNotification")
           plugin.write_text(ps)
+          # Correct Android framework imports and prevent webpage URLs being saved as fake media downloads.
+          plugin=Path("android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java")
+          ps=plugin.read_text().replace("import android.app.AppWidgetManager;", "import android.appwidget.AppWidgetManager;")
+          guard='''        String path = Uri.parse(url).getLastPathSegment();
+                  if (path == null || !path.matches("(?i).+\\\\.(mp4|m4v|mov|webm|mp3|m4a|aac|wav|flac|ogg|opus|jpg|jpeg|png|webp|gif|pdf|zip|7z|rar|apk|txt|csv|docx|xlsx)")) {
+                      call.reject("This build supports direct file URLs only. This page needs a real media extractor, which is not bundled yet.");
+                      return;
+                  }
+          '''
+          ps=ps.replace('        try {\\n            DownloadManager.Request request', '        try {\\n'+guard+'            DownloadManager.Request request')
+          plugin.write_text(ps)
+          widget=Path("android/app/src/main/java/app/dayflow/android/DayflowWidgetProvider.java")
+          ws=widget.read_text().replace("import android.appwidget.*;", "import android.appwidget.*;import android.app.PendingIntent;")
+          widget.write_text(ws)
           manifest=Path("android/app/src/main/AndroidManifest.xml")
           s=manifest.read_text()
           permissions=[
