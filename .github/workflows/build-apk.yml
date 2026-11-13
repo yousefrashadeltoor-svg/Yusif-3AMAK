@@ -235,6 +235,20 @@ jobs:
           browserNote='      <div className="mt-3"><Honest>{t("Browser notifications are real and permission-based. Scheduled background reminders need the Android notification system (not built in this preview). Interactive buttons (Complete / Snooze / Open) are Android-only.", "إشعارات المتصفح حقيقية وبتطلب إذن. التذكيرات المجدولة في الخلفية محتاجة نظام إشعارات أندرويد (مش مبني في المعاينة). الأزرار التفاعلية (تم / غفوة / افتح) لأندرويد فقط.")}</Honest></div>'
           s=s.replace(browserNote,'      {!isAndroidApk() && <div className="mt-3"><Honest>{t("Browser notifications are real and permission-based. Scheduled background reminders need the Android notification system.", "إشعارات المتصفح حقيقية وبتطلب إذن. التذكيرات المجدولة في الخلفية محتاجة نظام إشعارات أندرويد.")}</Honest></div>}')
           p.write_text(s)
+          # Correct prayer calculations for the selected city's civil date and daylight-saving offset.
+          p=Path("src/lib/prayer.ts"); s=p.read_text()
+          s=s.replace('  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },','  { lat: 30.0131, lng: 31.2089, city: "Giza", cityAr: "الجيزة", tz: 2 },\\n  { lat: 30.1792, lng: 31.2056, city: "Qalyub", cityAr: "قليوب", tz: 2 },\\n  { lat: 30.4667, lng: 31.1833, city: "Benha", cityAr: "بنها", tz: 2 },\\n  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },')
+          s=s.replace('let y = date.getFullYear(), m = date.getMonth() + 1; const d = date.getDate();','let y = date.getUTCFullYear(), m = date.getUTCMonth() + 1; const d = date.getUTCDate();')
+          s=s.replace('  const jd = julian(date);','''  const zone = loc.city === "London" ? "Europe/London" : loc.tz === 3 ? "Asia/Riyadh" : loc.tz === 4 ? "Asia/Dubai" : "Africa/Cairo";
+          const parts = new Intl.DateTimeFormat("en-GB", { timeZone: zone, year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", hourCycle: "h23" }).formatToParts(date);
+          const part = (type: string) => Number(parts.find(x => x.type === type)?.value || 0);
+          const year=part("year"), month=part("month"), day=part("day"), hour=part("hour"), minute=part("minute");
+          const tz = Math.round((Date.UTC(year, month-1, day, hour, minute) - date.getTime()) / 900000) / 4;
+          const civilDate = new Date(Date.UTC(year, month-1, day));
+          const jd = julian(civilDate);''')
+          s=s.replace('12 - eqt - loc.lng / 15 + loc.tz','12 - eqt - loc.lng / 15 + tz')
+          s=s.replace('const nowMin = date.getHours() * 60 + date.getMinutes();','const nowMin = hour * 60 + minute;')
+          p.write_text(s)
           PY
           node gen-assets.mjs
           curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
