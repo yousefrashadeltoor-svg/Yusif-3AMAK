@@ -282,7 +282,7 @@ jobs:
           import re
           plugin=Path("android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java")
           ps=plugin.read_text()
-          ps=ps.replace("import com.getcapacitor.annotation.CapacitorPlugin;", "import com.getcapacitor.annotation.CapacitorPlugin;\\nimport com.getcapacitor.annotation.Permission;\\nimport com.getcapacitor.annotation.PermissionCallback;\\nimport com.getcapacitor.PermissionState;")
+          ps=ps.replace("import com.getcapacitor.annotation.CapacitorPlugin;", "import com.getcapacitor.annotation.CapacitorPlugin;" + chr(10) + "import com.getcapacitor.annotation.Permission;" + chr(10) + "import com.getcapacitor.annotation.PermissionCallback;" + chr(10) + "import com.getcapacitor.PermissionState;")
           ps=ps.replace('@CapacitorPlugin(name = "DayflowBridge")', '@CapacitorPlugin(name = "DayflowBridge", permissions = { @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS }) })')
           permission_methods="""
               @PluginMethod public void requestNotificationsPermission(PluginCall call) {
@@ -294,7 +294,7 @@ jobs:
                   else call.reject("Notification permission was not granted");
               }
           """
-          if "requestNotificationsPermission" not in ps: ps=ps.replace("    @PluginMethod public void showNotification",permission_methods+"\\n    @PluginMethod public void showNotification")
+          if "requestNotificationsPermission" not in ps: ps=ps.replace("    @PluginMethod public void showNotification",permission_methods+chr(10)+"    @PluginMethod public void showNotification")
           plugin.write_text(ps)
           manifest=Path("android/app/src/main/AndroidManifest.xml")
           s=manifest.read_text()
