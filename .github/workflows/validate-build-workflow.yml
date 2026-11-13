@@ -28,12 +28,16 @@ jobs:
           puts "Job keys: #{job.keys.inspect}"
           steps = job["steps"]
           abort "build-apk steps must be a non-empty array" unless steps.is_a?(Array) && !steps.empty?
+          puts "Top name: #{data['name'].inspect}"
+          puts "on key: #{data[true].inspect}"
           puts "Steps count: #{steps.length}"
           steps.each_with_index do |step, index|
             abort "Step #{index + 1} is not a mapping" unless step.is_a?(Hash)
-            abort "Step #{index + 1} has no run or uses" unless step.key?("run") || step.key?("uses")
             bad = step.keys - %w[name id if uses run shell with env working-directory timeout-minutes continue-on-error]
             abort "Step #{index + 1} has unknown keys: #{bad.inspect}" unless bad.empty?
+            puts "#{index + 1}: name=#{step['name'].inspect} keys=#{step.keys.inspect} run_type=#{step['run'].class if step.key?('run')} uses=#{step['uses'].inspect if step.key?('uses')}"
+            abort "Step #{index + 1} run is not text" if step.key?("run") && !step["run"].is_a?(String)
+            abort "Step #{index + 1} uses is not text" if step.key?("uses") && !step["uses"].is_a?(String)
           end
           puts "YAML and core job/step structure valid"
           RUBY
