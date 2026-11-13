@@ -268,8 +268,8 @@ jobs:
           ]
           for p in permissions:
             tag=f'<uses-permission android:name="{p}" />'
-            if p not in s: s=s.replace("<manifest ", "<manifest ",1).replace(">",">",1)
-            if tag not in s: s=s.replace("</manifest>",f"    {tag}\\n</manifest>")
+            if p not in s:
+              s=s.replace("<application", f"    {tag}\\n    <application", 1)
           components="""
               <activity android:name="app.dayflow.android.AlarmRingActivity" android:exported="false" android:showWhenLocked="true" android:turnScreenOn="true" android:excludeFromRecents="true" />
               <receiver android:name="app.dayflow.android.AlarmReceiver" android:exported="false" />
