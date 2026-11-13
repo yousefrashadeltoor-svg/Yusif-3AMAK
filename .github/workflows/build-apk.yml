@@ -305,7 +305,7 @@ jobs:
                       return;
                   }
           '''
-          ps=ps.replace('        try {\\n            DownloadManager.Request request', '        try {\\n'+guard+'            DownloadManager.Request request')
+          ps=ps.replace('        try {' + chr(10) + '            DownloadManager.Request request', '        try {' + chr(10) + guard + '            DownloadManager.Request request')
           plugin.write_text(ps)
           widget=Path("android/app/src/main/java/app/dayflow/android/DayflowWidgetProvider.java")
           ws=widget.read_text().replace("import android.appwidget.*;", "import android.appwidget.*;import android.app.PendingIntent;")
