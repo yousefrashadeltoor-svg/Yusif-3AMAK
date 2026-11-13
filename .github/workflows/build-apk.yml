@@ -180,6 +180,12 @@ jobs:
           test -s src/assets/photos/noon.jpg
           test -s src/assets/art/fanous.jpg
           file src/assets/photos/dawn.jpg src/assets/photos/noon.jpg src/assets/art/fanous.jpg
+          echo "===== Asset generator source ====="
+          sed -n '1,260p' gen-assets.mjs
+          echo "===== Asset manifest ====="
+          cat assets-manifest.json
+          echo "===== Package scripts ====="
+          node -e "console.log(JSON.stringify(require('./package.json').scripts || {}, null, 2))"
           npm ci
           python3 - <<'PY'
           import pathlib, re
