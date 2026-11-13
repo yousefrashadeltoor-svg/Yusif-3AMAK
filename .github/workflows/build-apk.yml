@@ -362,7 +362,8 @@ jobs:
    if(Build.VERSION.SDK_INT<26){b.setSound(sound);if(vibrate)b.setVibrate(new long[]{0,500,250,500});}
    ((NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE)).notify(id==null?7100:id.hashCode(),b.build());
  }'''
-          ns=re.sub(r' public static void showAlarm\\(Context c,String label,String id\\)\\{.*?\\n \\}',alarm_method,ns,flags=re.S)
+          pattern=" public static void showAlarm"+chr(40)+"Context c,String label,String id"+chr(41)+chr(123)+".*?"+chr(10)+" }"
+          ns=re.sub(pattern,alarm_method,ns,flags=re.S)
           notif.write_text(ns)
           activity=Path("android/app/src/main/java/app/dayflow/android/AlarmRingActivity.java")
           aa=activity.read_text().replace('stop.setOnClickListener(v->{finish();});','stop.setOnClickListener(v->{String id=getIntent().getStringExtra("alarmId");((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(id==null?7100:id.hashCode());finish();});')
