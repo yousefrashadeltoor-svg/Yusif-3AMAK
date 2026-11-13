@@ -176,18 +176,23 @@ manifest.write_text(m, encoding="utf-8")
 p = src / "lib/nativeBridge.ts"
 s = p.read_text(encoding="utf-8")
 if "canScheduleExactAlarms():" not in s:
-    s = replace_once(
-        s,
-        '            scheduleAlarm(opts: { id:string; time:string; date?:string; days:number[]; label:string; soundUri?:string; vibrate:boolean; snooze:number; enabled?:boolean }): Promise<{scheduled?:boolean}>;',
-        '            scheduleAlarm(opts: { id:string; time:string; date?:string; days:number[]; label:string; soundUri?:string; vibrate:boolean; snooze:number; enabled?:boolean }): Promise<{scheduled?:boolean}>;\\n            canScheduleExactAlarms(): Promise<{granted:boolean}>;\\n            requestExactAlarmPermission(): Promise<{granted:boolean;settingsOpened?:boolean}>;',
-        "native bridge exact-alarm interface"
-    )
-    s = replace_once(
-        s,
-        '            scheduleAlarm:(o:Parameters<DayflowNative["scheduleAlarm"]>[0])=>call("scheduleAlarm",o),',
-        '            scheduleAlarm:(o:Parameters<DayflowNative["scheduleAlarm"]>[0])=>call("scheduleAlarm",o),\\n            canScheduleExactAlarms:()=>call("canScheduleExactAlarms"),\\n            requestExactAlarmPermission:()=>call("requestExactAlarmPermission"),',
-        "native bridge exact-alarm methods"
-    )
+    lines = s.splitlines()
+    signature_index = next((i for i, line in enumerate(lines) if "scheduleAlarm(opts:" in line), None)
+    if signature_index is None:
+        preview = "\\n".join(lines[:100])
+        raise RuntimeError("Could not locate scheduleAlarm interface in generated nativeBridge.ts: " + preview[:2000])
+    lines[signature_index + 1:signature_index + 1] = [
+        "  canScheduleExactAlarms(): Promise<{ granted: boolean }>;",
+        "  requestExactAlarmPermission(): Promise<{ granted: boolean; settingsOpened?: boolean }>;"
+    ]
+    wrapper_index = next((i for i, line in enumerate(lines) if "scheduleAlarm:" in line and 'call("scheduleAlarm"' in line), None)
+    if wrapper_index is None:
+        raise RuntimeError("Could not locate scheduleAlarm bridge wrapper in generated nativeBridge.ts")
+    lines[wrapper_index + 1:wrapper_index + 1] = [
+        '  canScheduleExactAlarms: () => call("canScheduleExactAlarms"),',
+        '  requestExactAlarmPermission: () => call("requestExactAlarmPermission"),'
+    ]
+    s = "\\n".join(lines) + "\\n"
 p.write_text(s, encoding="utf-8")
 
 # 9) Keep the selected Android sound URI in app state and pass it to Android scheduling.
