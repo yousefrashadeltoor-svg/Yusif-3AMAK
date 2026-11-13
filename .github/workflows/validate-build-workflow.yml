@@ -1,0 +1,19 @@
+name: Validate Android build workflow syntax
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse workflow YAML
+        shell: bash
+        run: |
+          ruby -e 'require "yaml"; YAML.load_file(".github/workflows/build-apk.yml"); puts "YAML syntax valid"'
