@@ -342,7 +342,7 @@ jobs:
           receiver.write_text(rs)
           notif=Path("android/app/src/main/java/app/dayflow/android/NativeNotifications.java")
           ns=notif.read_text()
-          ns=ns.replace("import android.app.*;", "import android.app.*;\\nimport android.media.AudioAttributes;\\nimport android.net.Uri;\\nimport android.provider.Settings;")
+          ns=ns.replace("import android.app.*;", "import android.app.*;" + chr(10) + "import android.media.AudioAttributes;" + chr(10) + "import android.net.Uri;" + chr(10) + "import android.provider.Settings;")
           import re
           alarm_method=''' public static void showAlarm(Context c,String label,String id,String soundUri,boolean vibrate){
    String channel="dayflow_alarm_"+(id==null?"default":id.hashCode())+"_"+(soundUri==null?"default":soundUri.hashCode());
