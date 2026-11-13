@@ -337,6 +337,42 @@ jobs:
           widget=Path("android/app/src/main/java/app/dayflow/android/DayflowWidgetProvider.java")
           ws=widget.read_text().replace("import android.appwidget.*;", "import android.appwidget.*;import android.app.PendingIntent;")
           widget.write_text(ws)
+          receiver=Path("android/app/src/main/java/app/dayflow/android/AlarmReceiver.java")
+          rs=receiver.read_text().replace('NativeNotifications.showAlarm(context, label == null ? "DAYFLOW alarm" : label, id);','NativeNotifications.showAlarm(context, label == null ? "DAYFLOW alarm" : label, id, intent.getStringExtra("soundUri"), intent.getBooleanExtra("vibrate", true));')
+          receiver.write_text(rs)
+          notif=Path("android/app/src/main/java/app/dayflow/android/NativeNotifications.java")
+          ns=notif.read_text()
+          ns=ns.replace("import android.app.*;", "import android.app.*;\\nimport android.media.AudioAttributes;\\nimport android.net.Uri;\\nimport android.provider.Settings;")
+          import re
+          alarm_method=''' public static void showAlarm(Context c,String label,String id,String soundUri,boolean vibrate){
+   String channel="dayflow_alarm_"+(id==null?"default":id.hashCode())+"_"+(soundUri==null?"default":soundUri.hashCode());
+   Uri sound=(soundUri==null||soundUri.isEmpty())?Settings.System.DEFAULT_ALARM_ALERT_URI:Uri.parse(soundUri);
+   if(Build.VERSION.SDK_INT>=26){
+    NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
+    if(nm.getNotificationChannel(channel)==null){
+     NotificationChannel ch=new NotificationChannel(channel,"DAYFLOW alarms",NotificationManager.IMPORTANCE_HIGH);
+     ch.setSound(sound,new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM).setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
+     ch.enableVibration(vibrate); nm.createNotificationChannel(ch);
+    }
+   }
+   Intent open=new Intent(c,AlarmRingActivity.class).putExtra("label",label).putExtra("alarmId",id).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
+   PendingIntent pi=PendingIntent.getActivity(c,(id==null?0:id.hashCode()),open,PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
+   Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(c,channel):new Notification.Builder(c);
+   b.setSmallIcon(c.getApplicationInfo().icon).setContentTitle(label).setContentText("Alarm is ringing").setCategory(Notification.CATEGORY_ALARM).setPriority(Notification.PRIORITY_MAX).setFullScreenIntent(pi,true).setContentIntent(pi).setOngoing(true);
+   if(Build.VERSION.SDK_INT<26){b.setSound(sound);if(vibrate)b.setVibrate(new long[]{0,500,250,500});}
+   ((NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE)).notify(id==null?7100:id.hashCode(),b.build());
+ }'''
+          ns=re.sub(r' public static void showAlarm\\(Context c,String label,String id\\)\\{.*?\\n \\}',alarm_method,ns,flags=re.S)
+          notif.write_text(ns)
+          activity=Path("android/app/src/main/java/app/dayflow/android/AlarmRingActivity.java")
+          aa=activity.read_text().replace('stop.setOnClickListener(v->{finish();});','stop.setOnClickListener(v->{String id=getIntent().getStringExtra("alarmId");((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(id==null?7100:id.hashCode());finish();});')
+          activity.write_text(aa)
+          # Hide browser-only alarm limitation text in the native Android build.
+          p=Path("src/screens/Alarms.tsx"); s=p.read_text()
+          s=s.replace('import { nativeBridge } from "../lib/nativeBridge";','import { nativeBridge, isAndroidApk } from "../lib/nativeBridge";')
+          old='      <div className="mt-5"><Honest>{t("This preview runs in a browser, so it can\'t ring when it\'s closed. On Android, alarms are scheduled natively with setAlarmClock() and ring even if the app is closed.", "هذه النسخة تعمل في المتصفح ولا يمكنها الرنين وهي مغلقة. على أندرويد تُجدول المنبهات أصليًا عبر setAlarmClock() وترن حتى لو كان التطبيق مغلقًا.")}</Honest></div>'
+          s=s.replace(old,'      {!isAndroidApk() && <div className="mt-5"><Honest>{t("This preview runs in a browser, so it can\'t ring when it\'s closed. Android uses the native alarm service.", "هذه النسخة تعمل في المتصفح ولا يمكنها الرنين وهي مغلقة. نسخة أندرويد تستخدم خدمة المنبه الأصلية.")}</Honest></div>}')
+          p.write_text(s)
           manifest=Path("android/app/src/main/AndroidManifest.xml")
           s=manifest.read_text()
           permissions=[
