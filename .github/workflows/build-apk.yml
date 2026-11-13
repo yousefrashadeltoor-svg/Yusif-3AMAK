@@ -1,0 +1,387 @@
+name: Build APK from project ZIP
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Inspect and extract project archive
+        id: inspect
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build-output extracted
+          python3 <<'PY'
+          import json, os, pathlib, zipfile
+          base = pathlib.Path.cwd()
+          out = base / "build-output" / "inspection.txt"
+          archives = sorted(p for p in base.glob("*.zip") if p.is_file())
+          if not archives:
+              raise SystemExit("No ZIP archive found in the repository root.")
+          archive = archives[0]
+          dest = base / "extracted"
+          dest.mkdir(exist_ok=True)
+          with zipfile.ZipFile(archive) as z:
+              for item in z.infolist():
+                  target = (dest / item.filename).resolve()
+                  if dest.resolve() not in target.parents and target != dest.resolve():
+                      raise SystemExit("Unsafe path in ZIP archive: " + item.filename)
+              z.extractall(dest)
+          files = [p for p in dest.rglob("*") if p.is_file()]
+          lines = [
+              f"Archive: {archive.name}",
+              f"Archive size: {archive.stat().st_size} bytes",
+              f"Extracted files: {len(files)}",
+              "",
+              "File listing:"
+          ]
+          lines.extend(str(p.relative_to(dest)) for p in sorted(files)[:5000])
+          out.write_text("\n".join(lines), encoding="utf-8")
+          kind, root = "unknown", dest
+          existing_apk = next((p for p in files if p.suffix.lower() == ".apk"), None)
+          if existing_apk:
+              kind, root = "apk", existing_apk
+          else:
+              manifests = list(dest.rglob("src/main/AndroidManifest.xml"))
+              gradle_roots = []
+              for manifest in manifests:
+                  for parent in manifest.parents:
+                      if (parent / "settings.gradle").exists() or (parent / "settings.gradle.kts").exists():
+                          gradle_roots.append(parent)
+                          break
+              if gradle_roots:
+                  kind, root = "android", min(gradle_roots, key=lambda p: len(p.parts))
+              else:
+                  pubspecs = list(dest.rglob("pubspec.yaml"))
+                  if pubspecs:
+                      kind, root = "flutter", pubspecs[0].parent
+                  else:
+                      package_files = list(dest.rglob("package.json"))
+                      detected = None
+                      for pkg in package_files:
+                          try:
+                              data = json.loads(pkg.read_text(encoding="utf-8"))
+                          except Exception:
+                              continue
+                          deps = {}
+                          deps.update(data.get("dependencies") or {})
+                          deps.update(data.get("devDependencies") or {})
+                          if "expo" in deps:
+                              detected = ("expo", pkg.parent); break
+                          if "@capacitor/core" in deps:
+                              detected = ("capacitor", pkg.parent); break
+                          if "cordova" in deps or (pkg.parent / "config.xml").exists():
+                              detected = ("cordova", pkg.parent); break
+                      if detected:
+                          kind, root = detected
+                      else:
+                          indexes = [p for p in dest.rglob("index.html")
+                                     if "node_modules" not in p.parts and ".git" not in p.parts]
+                          if indexes:
+                              preferred = next((p for p in indexes if p.parent.name in
+                                                ("dist", "build", "www", "public")), indexes[0])
+                              kind, root = "web", preferred.parent
+          rel = str(root.relative_to(base)) if root != dest else "extracted"
+          if kind == "apk":
+              rel = str(root.relative_to(base))
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+              f.write(f"kind={kind}\n")
+              f.write(f"project_root={rel}\n")
+              f.write(f"archive={archive.name}\n")
+          print(f"Detected project type: {kind}")
+          print(f"Project path: {rel}")
+          print(out.read_text(encoding="utf-8")[:12000])
+          PY
+
+      - name: Set up Java
+        if: steps.inspect.outputs.kind != 'apk'
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Android SDK
+        if: steps.inspect.outputs.kind != 'apk'
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        if: steps.inspect.outputs.kind != 'apk'
+        run: sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle
+        if: contains(fromJSON('["android","expo","capacitor","cordova","web"]'), steps.inspect.outputs.kind)
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Set up Node.js
+        if: contains(fromJSON('["expo","capacitor","cordova","web"]'), steps.inspect.outputs.kind)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Use existing APK from archive
+        if: steps.inspect.outputs.kind == 'apk'
+        run: cp "${{ steps.inspect.outputs.project_root }}" build-output/Yusif-3AMAK.apk
+
+      - name: Build existing Android Gradle project
+        if: steps.inspect.outputs.kind == 'android'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${{ steps.inspect.outputs.project_root }}"
+          if [[ -f ./gradlew ]]; then
+            chmod +x ./gradlew
+            ./gradlew --no-daemon assembleDebug
+          else
+            gradle --no-daemon assembleDebug
+          fi
+          APK="$(find . -type f -path '*/build/outputs/apk/*/*.apk' | head -n 1)"
+          test -n "$APK"
+          cp "$APK" "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
+
+      - name: Build Flutter project
+        if: steps.inspect.outputs.kind == 'flutter'
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Compile Flutter APK
+        if: steps.inspect.outputs.kind == 'flutter'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${{ steps.inspect.outputs.project_root }}"
+          flutter pub get
+          flutter build apk --debug
+          cp build/app/outputs/flutter-apk/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
+
+      - name: Build Expo, Capacitor, or Cordova Android project
+        if: contains(fromJSON('["expo","capacitor","cordova"]'), steps.inspect.outputs.kind)
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "${{ steps.inspect.outputs.project_root }}"
+          if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
+          case "${{ steps.inspect.outputs.kind }}" in
+            expo)
+              npx expo prebuild --platform android --non-interactive
+              ;;
+            capacitor)
+              if [[ ! -d android ]]; then npx cap add android; fi
+              npx cap sync android
+              ;;
+            cordova)
+              if [[ ! -d platforms/android ]]; then npx cordova platform add android; fi
+              npx cordova build android --debug
+              cp platforms/android/app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
+              exit 0
+              ;;
+          esac
+          cd android
+          gradle --no-daemon assembleDebug
+          APK="$(find . -type f -path '*/build/outputs/apk/*/*.apk' | head -n 1)"
+          test -n "$APK"
+          cp "$APK" "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
+
+      - name: Build web project as a local Android app
+        if: steps.inspect.outputs.kind == 'web'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SOURCE_ROOT="$GITHUB_WORKSPACE/${{ steps.inspect.outputs.project_root }}"
+          cd "$SOURCE_ROOT"
+          if [[ -f package.json ]]; then
+            if [[ -f package-lock.json ]]; then npm ci; else npm install; fi
+            if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then
+              npm run build
+            fi
+          fi
+
+          WEB_ROOT=""
+          for candidate in dist build www; do
+            if [[ -f "$SOURCE_ROOT/$candidate/index.html" ]]; then WEB_ROOT="$SOURCE_ROOT/$candidate"; break; fi
+          done
+          if [[ -z "$WEB_ROOT" && -f "$SOURCE_ROOT/index.html" ]]; then WEB_ROOT="$SOURCE_ROOT"; fi
+          if [[ -z "$WEB_ROOT" ]]; then
+            WEB_ROOT="$(dirname "$(find "$SOURCE_ROOT" -type f -name index.html -not -path '*/node_modules/*' | head -n 1)")"
+          fi
+          test -n "$WEB_ROOT" && test -f "$WEB_ROOT/index.html"
+
+          APP="$GITHUB_WORKSPACE/android-wrapper"
+          mkdir -p "$APP/app/src/main/assets/website" "$APP/app/src/main/java/com/yusif3amak/wrapper"
+          cp -a "$WEB_ROOT/." "$APP/app/src/main/assets/website/"
+
+          cat > "$APP/settings.gradle" <<'EOF'
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement {
+              repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+              repositories { google(); mavenCentral() }
+          }
+          rootProject.name = "Yusif3AMAK"
+          include(":app")
+          EOF
+          cat > "$APP/build.gradle" <<'EOF'
+          plugins {
+              id 'com.android.application' version '8.7.3' apply false
+          }
+          EOF
+          cat > "$APP/gradle.properties" <<'EOF'
+          org.gradle.jvmargs=-Xmx3g -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          EOF
+          cat > "$APP/app/build.gradle" <<'EOF'
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'com.yusif3amak.wrapper'
+              compileSdk 35
+              defaultConfig {
+                  applicationId 'com.yusif3amak.wrapper'
+                  minSdk 23
+                  targetSdk 32
+                  versionCode 1
+                  versionName '1.0'
+              }
+          }
+          EOF
+          cat > "$APP/app/src/main/AndroidManifest.xml" <<'EOF'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <application
+                  android:label="Yusif 3AMAK"
+                  android:theme="@android:style/Theme.Material.Light.NoActionBar"
+                  android:usesCleartextTraffic="true"
+                  android:hardwareAccelerated="true"
+                  android:allowBackup="false">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:configChanges="orientation|screenSize|keyboardHidden">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+              </application>
+          </manifest>
+          EOF
+          cat > "$APP/app/src/main/java/com/yusif3amak/wrapper/MainActivity.java" <<'EOF'
+          package com.yusif3amak.wrapper;
+
+          import android.app.Activity;
+          import android.content.Intent;
+          import android.net.Uri;
+          import android.os.Bundle;
+          import android.webkit.ValueCallback;
+          import android.webkit.WebChromeClient;
+          import android.webkit.WebSettings;
+          import android.webkit.WebView;
+          import android.webkit.WebViewClient;
+
+          public class MainActivity extends Activity {
+              private WebView webView;
+              private ValueCallback<Uri[]> uploadCallback;
+              private static final int FILE_PICKER_REQUEST = 4107;
+
+              @Override
+              protected void onCreate(Bundle state) {
+                  super.onCreate(state);
+                  webView = new WebView(this);
+                  WebSettings settings = webView.getSettings();
+                  settings.setJavaScriptEnabled(true);
+                  settings.setDomStorageEnabled(true);
+                  settings.setDatabaseEnabled(true);
+                  settings.setAllowFileAccess(true);
+                  settings.setAllowContentAccess(true);
+                  settings.setLoadsImagesAutomatically(true);
+                  settings.setMediaPlaybackRequiresUserGesture(false);
+                  webView.setWebViewClient(new WebViewClient());
+                  webView.setWebChromeClient(new WebChromeClient() {
+                      @Override
+                      public boolean onShowFileChooser(
+                              WebView view,
+                              ValueCallback<Uri[]> callback,
+                              FileChooserParams params) {
+                          if (uploadCallback != null) uploadCallback.onReceiveValue(null);
+                          uploadCallback = callback;
+                          try {
+                              startActivityForResult(params.createIntent(), FILE_PICKER_REQUEST);
+                              return true;
+                          } catch (Exception error) {
+                              uploadCallback = null;
+                              return false;
+                          }
+                      }
+                  });
+                  setContentView(webView);
+                  if (state == null) {
+                      webView.loadUrl("file:///android_asset/website/index.html");
+                  } else {
+                      webView.restoreState(state);
+                  }
+              }
+
+              @Override
+              protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                  super.onActivityResult(requestCode, resultCode, data);
+                  if (requestCode == FILE_PICKER_REQUEST && uploadCallback != null) {
+                      Uri[] result = WebChromeClient.FileChooserParams.parseResult(resultCode, data);
+                      uploadCallback.onReceiveValue(result);
+                      uploadCallback = null;
+                  }
+              }
+
+              @Override
+              protected void onSaveInstanceState(Bundle state) {
+                  super.onSaveInstanceState(state);
+                  if (webView != null) webView.saveState(state);
+              }
+
+              @Override
+              public void onBackPressed() {
+                  if (webView != null && webView.canGoBack()) webView.goBack();
+                  else super.onBackPressed();
+              }
+
+              @Override
+              protected void onDestroy() {
+                  if (webView != null) {
+                      webView.stopLoading();
+                      webView.destroy();
+                      webView = null;
+                  }
+                  super.onDestroy();
+              }
+          }
+          EOF
+
+          cd "$APP"
+          gradle --no-daemon assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
+
+      - name: Explain unsupported archive structure
+        if: steps.inspect.outputs.kind == 'unknown'
+        run: |
+          echo "The ZIP was extracted, but no supported Android, Flutter, Expo, Capacitor, Cordova, or HTML entry point was found." | tee -a build-output/inspection.txt
+          exit 1
+
+      - name: Upload APK and inspection report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yusif-3AMAK-APK
+          path: |
+            build-output/
+          if-no-files-found: warn
+          retention-days: 30
