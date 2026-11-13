@@ -236,6 +236,17 @@ jobs:
           s=s.replace(browserNote,'      {!isAndroidApk() && <div className="mt-3"><Honest>{t("Browser notifications are real and permission-based. Scheduled background reminders need the Android notification system.", "إشعارات المتصفح حقيقية وبتطلب إذن. التذكيرات المجدولة في الخلفية محتاجة نظام إشعارات أندرويد.")}</Honest></div>}')
           p.write_text(s)
           # Correct prayer calculations for the selected city's civil date and daylight-saving offset.
+          p=Path("src/lib/downloads.ts"); s=p.read_text()
+          s=s.replace('title: string; thumb?: string; author?: string; duration?: number;','title: string; thumb?: string; author?: string; description?: string; duration?: number;')
+          s=s.replace('thumbnail?: string; duration?: number; formats?: YtFormat[]; webpage_url_domain?: string','thumbnail?: string; duration?: number; formats?: YtFormat[]; webpage_url_domain?: string; description?: string; mimeType?: string; size?: number; direct?: boolean; site?: string')
+          s=s.replace('base.title = j.title || base.title; base.author = j.uploader; base.thumb = j.thumbnail; base.duration = j.duration; base.filename = sanitizeFilename(j.title || "download");','base.title = j.title || base.title; base.author = j.uploader || j.site; base.description = j.description; base.mime = j.mimeType; base.size = j.size && j.size > 0 ? j.size : undefined; base.thumb = j.thumbnail; base.duration = j.duration; base.filename = sanitizeFilename(j.title || "download");')
+          s=s.replace('''        base.formats = [
+          ...g.presets.map''','''        base.formats = j.direct ? [{ id: "original", label: (j.mimeType || "FILE").split("/").pop()?.toUpperCase() || "FILE", detail: j.mimeType || "Direct file", size: base.size, kind: (kind === "video" ? "video" : kind === "audio" ? "audio" : kind === "image" ? "image" : "file") as "video" | "audio" | "image" | "file", url: parsed.url }] : [
+          ...g.presets.map''')
+          p.write_text(s)
+          p=Path("src/screens/Downloads.tsx"); s=p.read_text()
+          s=s.replace('{an.author && <p className="mt-1 text-[11px] muted">{an.author}</p>}', '{an.author && <p className="mt-1 text-[11px] muted">{an.author}</p>}{an.description && <p className="mt-1 line-clamp-2 text-[11px] leading-relaxed muted">{an.description}</p>}')
+          p.write_text(s)
           p=Path("src/lib/prayer.ts"); s=p.read_text()
           s=s.replace('  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },','  { lat: 31.2001, lng: 29.9187, city: "Alexandria", cityAr: "الإسكندرية", tz: 2 },')
           s=s.replace('  { lat: 51.5074, lng: -0.1278, city: "London", cityAr: "لندن", tz: 0 },','  { lat: 51.5074, lng: -0.1278, city: "London", cityAr: "لندن", tz: 0 },' + chr(10) + '  { lat: 30.0131, lng: 31.2089, city: "Giza", cityAr: "الجيزة", tz: 2 },' + chr(10) + '  { lat: 30.1792, lng: 31.2056, city: "Qalyub", cityAr: "قليوب", tz: 2 },' + chr(10) + '  { lat: 30.4667, lng: 31.1833, city: "Benha", cityAr: "بنها", tz: 2 },')
