@@ -374,6 +374,10 @@ jobs:
           else: raise SystemExit("Capacitor MainActivity.java not found; native plugin registration was not applied")
           PY
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
+          python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
+          # The native permission/sound and app-feature patches must be compiled into the Web assets.
+          npm run build
+          npx cap sync android
           cd android
           if [[ -f ./gradlew ]]; then chmod +x ./gradlew; ./gradlew --no-daemon assembleDebug; else gradle --no-daemon assembleDebug; fi
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
