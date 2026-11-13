@@ -172,8 +172,6 @@ jobs:
           import { Capacitor, registerPlugin } from "@capacitor/core";
           export interface DayflowNative {
             scheduleAlarm(opts: { id:string; time:string; date?:string; days:number[]; label:string; soundUri?:string; vibrate:boolean; snooze:number; enabled?:boolean }): Promise<{scheduled?:boolean}>;
-            canScheduleExactAlarms(): Promise<{granted:boolean}>;
-            requestExactAlarmPermission(): Promise<{granted:boolean;settingsOpened?:boolean}>;
             cancelAlarm(opts:{id:string}):Promise<{cancelled?:boolean}>;
             getDeviceTones():Promise<{tones:Array<{title:string;uri:string;type:string}>}>;
             pinWidget(opts:{designId:string;style:string;w:number;h:number}):Promise<{pinned:boolean}>;
@@ -198,8 +196,6 @@ jobs:
           };
           export const nativeBridge={
             scheduleAlarm:(o:Parameters<DayflowNative["scheduleAlarm"]>[0])=>call("scheduleAlarm",o),
-            canScheduleExactAlarms:()=>call("canScheduleExactAlarms"),
-            requestExactAlarmPermission:()=>call("requestExactAlarmPermission"),
             cancelAlarm:(o:Parameters<DayflowNative["cancelAlarm"]>[0])=>call("cancelAlarm",o),
             getDeviceTones:()=>call("getDeviceTones"),
             pinWidget:(o:Parameters<DayflowNative["pinWidget"]>[0])=>call("pinWidget",o),
@@ -377,187 +373,7 @@ jobs:
               activity.write_text(a)
           else: raise SystemExit("Capacitor MainActivity.java not found; native plugin registration was not applied")
           PY
-          # Repair exact-alarm permission flow, selected device ringtone delivery, and alarm restore.
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-
-          root = Path("android/app/src/main/java/app/dayflow/android")
-          plugin = root / "DayflowBridgePlugin.java"
-          ps = plugin.read_text()
-          permission_methods = """
-              @PluginMethod public void canScheduleExactAlarms(PluginCall call) {
-                  boolean granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                      ((AlarmManager)getContext().getSystemService(Context.ALARM_SERVICE)).canScheduleExactAlarms();
-                  JSObject out = new JSObject(); out.put("granted", granted); call.resolve(out);
-              }
-              @PluginMethod public void requestExactAlarmPermission(PluginCall call) {
-                  boolean granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
-                      ((AlarmManager)getContext().getSystemService(Context.ALARM_SERVICE)).canScheduleExactAlarms();
-                  if (!granted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                      Intent settings = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                          Uri.parse("package:" + getContext().getPackageName()));
-                      settings.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                      getContext().startActivity(settings);
-                  }
-                  JSObject out = new JSObject(); out.put("granted", granted);
-                  out.put("settingsOpened", !granted); call.resolve(out);
-              }
-          """
-          if "canScheduleExactAlarms(PluginCall call)" not in ps:
-              needle = "    @PluginMethod public void scheduleAlarm(PluginCall call) {"
-              if needle not in ps: raise SystemExit("scheduleAlarm method not found")
-              ps = ps.replace(needle, permission_methods + chr(10) + needle)
-          plugin.write_text(ps)
-
-          scheduler = root / "AlarmScheduler.java"
-          ss = scheduler.read_text()
-          ss = ss.replace(
-              "PendingIntent pi = pending(c, id, null, PendingIntent.FLAG_NO_CREATE);",
-              "PendingIntent pi = pending(c, id, null, PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);"
-          )
-          old_alarm_manager = """        AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
-                  if (Build.VERSION.SDK_INT >= 23) {"""
-          new_alarm_manager = """        AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !am.canScheduleExactAlarms()) {
-                      throw new SecurityException("Grant Alarms & reminders access before scheduling an exact alarm");
-                  }
-                  if (Build.VERSION.SDK_INT >= 23) {"""
-          if old_alarm_manager in ss: ss = ss.replace(old_alarm_manager, new_alarm_manager, 1)
-          if "Grant Alarms & reminders access" not in ss: raise SystemExit("exact alarm permission guard insertion failed")
-          old_reschedule = '''        String raw = c.getSharedPreferences("dayflow_native",0).getString("alarm_"+id,null);
-                  if (raw == null) return;
-                  try { schedule(c,new JSONObject(raw)); } catch (Exception ignored) {}'''
-          new_reschedule = '''        String key = "alarm_" + id;
-                  String raw = c.getSharedPreferences("dayflow_native",0).getString(key,null);
-                  if (raw == null) return;
-                  try {
-                      JSONObject data = new JSONObject(raw);
-                      JSONArray days = data.optJSONArray("days");
-                      if (days == null || days.length() == 0) {
-                          c.getSharedPreferences("dayflow_native",0).edit().remove(key).apply();
-                          return;
-                      }
-                      schedule(c, data);
-                  } catch (Exception ignored) {}'''
-          if old_reschedule in ss: ss = ss.replace(old_reschedule, new_reschedule)
-          scheduler.write_text(ss)
-
-          receiver = root / "AlarmReceiver.java"
-          rs = receiver.read_text()
-          rs = rs.replace(
-              'NativeNotifications.showAlarm(context, label == null ? "DAYFLOW alarm" : label, id);',
-              'NativeNotifications.showAlarm(context, label == null ? "DAYFLOW alarm" : label, id, intent.getStringExtra("soundUri"), intent.getBooleanExtra("vibrate", true));'
-          )
-          receiver.write_text(rs)
-
-          notifications = root / "NativeNotifications.java"
-          ns = notifications.read_text()
-          ns = ns.replace("import android.os.Build;", "import android.os.Build;" + chr(10) + "import android.media.AudioAttributes;" + chr(10) + "import android.net.Uri;" + chr(10) + "import android.provider.Settings;")
-          start = ns.find(" public static void showAlarm(")
-          if start < 0: raise SystemExit("Native alarm notification method not found")
-          end = ns.find(chr(10) + " }", start)
-          if end < 0: raise SystemExit("Native alarm notification method end not found")
-          end += len(chr(10) + " }")
-          alarm_method = ''' public static void showAlarm(Context c,String label,String id,String soundUri,boolean vibrate){
-                  Uri sound = (soundUri == null || soundUri.isEmpty())
-                      ? Settings.System.DEFAULT_ALARM_ALERT_URI : Uri.parse(soundUri);
-                  String channelId = "dayflow_alarm_" + (id == null ? "default" : id.hashCode())
-                      + "_" + sound.toString().hashCode() + "_" + (vibrate ? "v" : "n");
-                  if (Build.VERSION.SDK_INT >= 26) {
-                      NotificationManager nm=(NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE);
-                      if (nm.getNotificationChannel(channelId) == null) {
-                          NotificationChannel ch=new NotificationChannel(channelId,"DAYFLOW alarm",NotificationManager.IMPORTANCE_HIGH);
-                          ch.setSound(sound,new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM)
-                              .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
-                          ch.enableVibration(vibrate);
-                          ch.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
-                          nm.createNotificationChannel(ch);
-                      }
-                  }
-                  Intent open=new Intent(c,AlarmRingActivity.class).putExtra("label",label).putExtra("alarmId",id)
-                      .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK|Intent.FLAG_ACTIVITY_CLEAR_TOP);
-                  PendingIntent pi=PendingIntent.getActivity(c,(id==null?7100:id.hashCode()),open,
-                      PendingIntent.FLAG_UPDATE_CURRENT|PendingIntent.FLAG_IMMUTABLE);
-                  Notification.Builder b=Build.VERSION.SDK_INT>=26?new Notification.Builder(c,channelId):new Notification.Builder(c);
-                  b.setSmallIcon(c.getApplicationInfo().icon).setContentTitle(label).setContentText("Alarm is ringing")
-                      .setCategory(Notification.CATEGORY_ALARM).setPriority(Notification.PRIORITY_MAX)
-                      .setFullScreenIntent(pi,true).setContentIntent(pi).setOngoing(true).setAutoCancel(false);
-                  if (Build.VERSION.SDK_INT < 26) { b.setSound(sound); if (vibrate) b.setVibrate(new long[]{0,500,250,500}); }
-                  ((NotificationManager)c.getSystemService(Context.NOTIFICATION_SERVICE)).notify(id==null?7100:id.hashCode(),b.build());
-              }'''
-          ns = ns[:start] + alarm_method + ns[end:]
-          notifications.write_text(ns)
-
-          activity = root / "AlarmRingActivity.java"
-          aa = activity.read_text()
-          aa = aa.replace(
-              "stop.setOnClickListener(v->{finish();});",
-              'stop.setOnClickListener(v->{String id=getIntent().getStringExtra("alarmId");((NotificationManager)getSystemService(NOTIFICATION_SERVICE)).cancel(id==null?7100:id.hashCode());finish();});'
-          )
-          activity.write_text(aa)
-
-          boot = root / "BootReceiver.java"
-          bs = boot.read_text()
-          if "import android.app.AlarmManager;" not in bs:
-              bs = bs.replace("import android.content.Intent;", "import android.content.Intent;" + chr(10) + "import android.app.AlarmManager;")
-          bs = bs.replace(
-              "public class BootReceiver extends BroadcastReceiver {\n @Override public void onReceive(Context context, Intent intent) { AlarmScheduler.restoreAll(context); }",
-              "public class BootReceiver extends BroadcastReceiver {\n @Override public void onReceive(Context context, Intent intent) { if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !((AlarmManager)context.getSystemService(Context.ALARM_SERVICE)).canScheduleExactAlarms()) return; AlarmScheduler.restoreAll(context); }"
-          )
-          if "import android.os.Build;" not in bs:
-              bs = bs.replace("import android.app.AlarmManager;", "import android.app.AlarmManager;" + chr(10) + "import android.os.Build;")
-          boot.write_text(bs)
-
-          manifest = Path("android/app/src/main/AndroidManifest.xml")
-          ms = manifest.read_text()
-          exact_action = '<action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED"/>'
-          time_action = '<action android:name="android.intent.action.TIMEZONE_CHANGED"/>'
-          if exact_action not in ms and time_action in ms:
-              ms = ms.replace(time_action, time_action + exact_action)
-          manifest.write_text(ms)
-
-          # Make exact-alarm access explicit before saving. The user can return from Settings and tap Save again.
-          p = Path("src/screens/Alarms.tsx"); s = p.read_text()
-          s = s.replace('import { nativeBridge } from "../lib/nativeBridge";',
-                        'import { nativeBridge, isAndroidApk } from "../lib/nativeBridge";')
-          s = s.replace('const save = () => {', 'const save = async () => {')
-          validation = '    if (a.date && (!isValidDay(a.date) || !futureAt(a.date, a.time)) {'
-          # Insert permission request after one-time/date validation and before changing persistent app state.
-          anchor = '    if (a.date && (!isValidDay(a.date) || !futureAt(a.date, a.time))) { setError(t("That date and time have already passed. Pick a future time.", "المعاد ده فات؛ اختار يوم وساعة لسه جايين.")); return; }'
-          permission_ui = '''
-              if (a.enabled && isAndroidApk()) {
-                  const permission = await nativeBridge.canScheduleExactAlarms?.();
-                  if (permission && !permission.granted) {
-                      await nativeBridge.requestExactAlarmPermission?.();
-                      setError(t("Allow DAYFLOW to set alarms and reminders in Android Settings, then tap Save again.", "اسمح لـ DAYFLOW بضبط المنبهات والتذكيرات من إعدادات أندرويد، وبعدها اضغط حفظ مرة تانية."));
-                      return;
-                  }
-              }'''
-          if anchor not in s: raise SystemExit("AlarmEditor validation anchor not found")
-          if "canScheduleExactAlarms" not in s: s = s.replace(anchor, anchor + permission_ui)
-          old_persist = '''    const id = a.id ? (s.updateAlarm(a.id, a), a.id) : s.addAlarm(a);
-                  if (a.enabled) void nativeBridge.scheduleAlarm({ id, date: a.date, time: a.time, days: a.days, label: a.label, soundUri: a.sound.uri, vibrate: a.vibrate, snooze: a.snooze });
-                  else nativeBridge.cancelAlarm({ id });
-                  onClose();'''
-          new_persist = '''    const id = a.id ? (s.updateAlarm(a.id, a), a.id) : s.addAlarm(a);
-                  if (!a.id) setA({ ...a, id });
-                  try {
-                      if (a.enabled) await nativeBridge.scheduleAlarm({ id, date: a.date, time: a.time, days: a.days, label: a.label, soundUri: a.sound.uri, vibrate: a.vibrate, snooze: a.snooze });
-                      else await nativeBridge.cancelAlarm({ id });
-                  } catch (e) {
-                      setError(t("Android could not schedule this alarm. Check Alarms & reminders access and try again.", "أندرويد لم يستطع جدولة المنبه. راجع إذن المنبهات والتذكيرات وحاول مرة أخرى."));
-                      return;
-                  }
-                  onClose();'''
-          if old_persist not in s: raise SystemExit("AlarmEditor native schedule block not found")
-          s = s.replace(old_persist, new_persist)
-          # Protect the alarm enable switch with the same Android permission check.
-          old_toggle = 'onChange={(v) => { s.updateAlarm(a.id, { enabled: v }); if (v) void nativeBridge.scheduleAlarm({ id: a.id, date: a.date, time: a.time, days: a.days, label: a.label, soundUri: a.sound.uri, vibrate: a.vibrate, snooze: a.snooze }); else void nativeBridge.cancelAlarm({ id: a.id }); }}'
-          new_toggle = 'onChange={async (v) => { if (v && isAndroidApk()) { const permission = await nativeBridge.canScheduleExactAlarms?.(); if (permission && !permission.granted) { await nativeBridge.requestExactAlarmPermission?.(); return; } } s.updateAlarm(a.id, { enabled: v }); try { if (v) await nativeBridge.scheduleAlarm({ id: a.id, date: a.date, time: a.time, days: a.days, label: a.label, soundUri: a.sound.uri, vibrate: a.vibrate, snooze: a.snooze }); else await nativeBridge.cancelAlarm({ id: a.id }); } catch (e) { console.error("DAYFLOW alarm scheduling failed", e); } }}'
-          if old_toggle in s: s = s.replace(old_toggle, new_toggle)
-          p.write_text(s)
-          PY
+          python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
           cd android
           if [[ -f ./gradlew ]]; then chmod +x ./gradlew; ./gradlew --no-daemon assembleDebug; else gradle --no-daemon assembleDebug; fi
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
