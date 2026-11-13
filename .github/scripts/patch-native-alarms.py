@@ -174,7 +174,7 @@ if "canScheduleExactAlarms():" not in s:
     lines = s.splitlines()
     signature_index = next((i for i, line in enumerate(lines) if "scheduleAlarm(opts:" in line), None)
     if signature_index is None:
-        preview = "\\n".join(lines[:100])
+        preview = "\n".join(lines[:100])
         raise RuntimeError("Could not locate scheduleAlarm interface in generated nativeBridge.ts: " + preview[:2000])
     lines[signature_index + 1:signature_index + 1] = [
         "  canScheduleExactAlarms(): Promise<{ granted: boolean }>;",
@@ -187,7 +187,7 @@ if "canScheduleExactAlarms():" not in s:
         '  canScheduleExactAlarms: () => call("canScheduleExactAlarms"),',
         '  requestExactAlarmPermission: () => call("requestExactAlarmPermission"),'
     ]
-    s = "\\n".join(lines) + "\\n"
+    s = "\n".join(lines) + "\n"
 p.write_text(s, encoding="utf-8")
 
 # 9) Keep the selected Android sound URI in app state and pass it to Android scheduling.
