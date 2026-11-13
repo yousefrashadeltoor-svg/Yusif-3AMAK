@@ -175,7 +175,7 @@ jobs:
             cancelAlarm(opts:{id:string}):Promise<{cancelled?:boolean}>;
             getDeviceTones():Promise<{tones:Array<{title:string;uri:string;type:string}>}>;
             pinWidget(opts:{designId:string;style:string;w:number;h:number}):Promise<{pinned:boolean}>;
-            openWidgetHub():Promise<void>;
+            openWidgetHub():Promise<void>; requestNotificationsPermission():Promise<void>;
             startCompanionOverlay(opts:{enabled:boolean;size:number;opacity:number;modelId?:string}):Promise<{hasPermission:boolean}>;
             requestOverlayPermission():Promise<void>;
             enqueueDownload(opts:{url:string;name:string;preset?:string}):Promise<{downloadId?:number;queued?:boolean}>;
@@ -199,7 +199,7 @@ jobs:
             cancelAlarm:(o:Parameters<DayflowNative["cancelAlarm"]>[0])=>call("cancelAlarm",o),
             getDeviceTones:()=>call("getDeviceTones"),
             pinWidget:(o:Parameters<DayflowNative["pinWidget"]>[0])=>call("pinWidget",o),
-            openWidgetHub:()=>call("openWidgetHub"),
+            openWidgetHub:()=>call("openWidgetHub"), requestNotificationsPermission:()=>call("requestNotificationsPermission"),
             startCompanionOverlay:(o:Parameters<DayflowNative["startCompanionOverlay"]>[0])=>call("startCompanionOverlay",o),
             requestOverlayPermission:()=>call("requestOverlayPermission"),
             enqueueDownload:(o:Parameters<DayflowNative["enqueueDownload"]>[0])=>call("enqueueDownload",o),
@@ -280,6 +280,22 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           import re
+          plugin=Path("android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java")
+          ps=plugin.read_text()
+          ps=ps.replace("import com.getcapacitor.annotation.CapacitorPlugin;", "import com.getcapacitor.annotation.CapacitorPlugin;\\nimport com.getcapacitor.annotation.Permission;\\nimport com.getcapacitor.annotation.PermissionCallback;\\nimport com.getcapacitor.PermissionState;")
+          ps=ps.replace('@CapacitorPlugin(name = "DayflowBridge")', '@CapacitorPlugin(name = "DayflowBridge", permissions = { @Permission(alias = "notifications", strings = { Manifest.permission.POST_NOTIFICATIONS }) })')
+          permission_methods="""
+              @PluginMethod public void requestNotificationsPermission(PluginCall call) {
+                  if (Build.VERSION.SDK_INT < 33 || getPermissionState("notifications") == PermissionState.GRANTED) { call.resolve(); return; }
+                  requestPermissionForAlias("notifications", call, "notificationPermissionResult");
+              }
+              @PermissionCallback private void notificationPermissionResult(PluginCall call) {
+                  if (getPermissionState("notifications") == PermissionState.GRANTED) call.resolve();
+                  else call.reject("Notification permission was not granted");
+              }
+          """
+          if "requestNotificationsPermission" not in ps: ps=ps.replace("    @PluginMethod public void showNotification",permission_methods+"\\n    @PluginMethod public void showNotification")
+          plugin.write_text(ps)
           manifest=Path("android/app/src/main/AndroidManifest.xml")
           s=manifest.read_text()
           permissions=[
