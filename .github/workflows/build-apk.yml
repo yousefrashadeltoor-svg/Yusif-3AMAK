@@ -196,6 +196,11 @@ jobs:
           print("All statically imported local image assets are present.")
           PY
           if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then npm run build; fi
+          # Install a matching Capacitor CLI into CI only; do not modify project manifests.
+          CAP_VERSION="$(node -p "require('./node_modules/@capacitor/core/package.json').version")"
+          CAP_MAJOR="${CAP_VERSION%%.*}"
+          npm install --no-save --package-lock=false "@capacitor/cli@^${CAP_MAJOR}.0.0"
+          npx cap --version
           if [[ ! -d android ]]; then npx cap add android; fi
           npx cap sync android
           cd android
