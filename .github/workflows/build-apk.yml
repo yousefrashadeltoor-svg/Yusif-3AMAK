@@ -235,29 +235,6 @@ jobs:
           browserNote='      <div className="mt-3"><Honest>{t("Browser notifications are real and permission-based. Scheduled background reminders need the Android notification system (not built in this preview). Interactive buttons (Complete / Snooze / Open) are Android-only.", "إشعارات المتصفح حقيقية وبتطلب إذن. التذكيرات المجدولة في الخلفية محتاجة نظام إشعارات أندرويد (مش مبني في المعاينة). الأزرار التفاعلية (تم / غفوة / افتح) لأندرويد فقط.")}</Honest></div>'
           s=s.replace(browserNote,'      {!isAndroidApk() && <div className="mt-3"><Honest>{t("Browser notifications are real and permission-based. Scheduled background reminders need the Android notification system.", "إشعارات المتصفح حقيقية وبتطلب إذن. التذكيرات المجدولة في الخلفية محتاجة نظام إشعارات أندرويد.")}</Honest></div>}')
           p.write_text(s)
-          # Keep browser-only alarm guidance out of the Android application.
-          p=Path("src/screens/Alarms.tsx"); s=p.read_text()
-          s=s.replace('import { nativeBridge } from "../lib/nativeBridge";','import { nativeBridge, isAndroidApk } from "../lib/nativeBridge";')
-          alarm_note="""      <div className="mt-5"><Honest>{t("This preview runs in a browser, so it can't ring when it's closed. On Android, alarms are scheduled natively with setAlarmClock() and ring even if the app is closed.", "هذه النسخة تعمل في المتصفح ولا يمكنها الرنين وهي مغلقة. على أندرويد تُجدول المنبهات أصليًا عبر setAlarmClock() وترن حتى لو كان التطبيق مغلقًا.")}</Honest></div>"""
-          s=s.replace(alarm_note,'      {!isAndroidApk() && <div className="mt-5"><Honest>{t("This preview runs in a browser, so it can't ring when it's closed. Android uses native alarm scheduling.", "هذه النسخة تعمل في المتصفح ولا يمكنها الرنين وهي مغلقة. نسخة أندرويد تستخدم جدولة المنبهات الأصلية.")}</Honest></div>}')
-          p.write_text(s)
-          # Correct inaccurate claims about native 3D and unavailable media extraction engines.
-          p=Path("src/screens/Me.tsx"); s=p.read_text()
-          s=s.replace("The Android app renders these GLB files with Filament (not WebGL). This preview uses three.js.", "Android overlay uses a native system window. This model preview uses three.js.")
-          s=s.replace("SYSTEM_ALERT_WINDOW + foreground service. Wired in android/ — tap inside the APK to grant overlay permission.", "SYSTEM_ALERT_WINDOW + native foreground service. Tap to grant Android overlay permission and show the floating companion.")
-          s=s.replace("المعاينة دي بترسم روبوت ثنائي الأبعاد بمفاصل فيزيائية حقيقية. تطبيق أندرويد بيعرض GLB عبر Filament.", "المعاينة دي بترسم روبوت ثنائي الأبعاد بمفاصل فيزيائية حقيقية. نافذة أندرويد العائمة تُعرض عبر View أصلي.")
-          s=s.replace("This preview draws an articulated 2D robot with real joint physics. The Android app renders a GLB with Filament.", "This preview draws an articulated 2D robot with joint physics. Android uses a native overlay window; the GLB/Filament renderer is not included yet.")
-          p.write_text(s)
-          p=Path("src/screens/MediaHub.tsx"); s=p.read_text()
-          s=s.replace("Site-protected video streams (YouTube, TikTok, Instagram) require the Android APK's yt-dlp + FFmpeg + aria2c engine (already wired in android/ and omitted from the Play flavor -PnoMediaHub).", "Site-protected video streams (YouTube, TikTok, Instagram) need a site-specific extractor. This build supports direct file URLs; yt-dlp, FFmpeg and aria2c are not bundled yet.")
-          s=s.replace("بث المواقع المحمية (يوتيوب، تيك توك، إنستجرام) يحتاج محرك yt-dlp + FFmpeg + aria2c داخل الـAPK (مكتوب في مجلد android/ ومحذوف من نسخة Play -PnoMediaHub).", "بث المواقع المحمية (يوتيوب، تيك توك، إنستجرام) يحتاج محرك استخراج متخصص. النسخة الحالية تدعم روابط الملفات المباشرة؛ أدوات yt-dlp وFFmpeg وaria2c غير مضمّنة حتى الآن.")
-          p.write_text(s)
-          # Cap the companion's React render loop at 60fps on high-refresh-rate phones.
-          p=Path("src/components/Companion.tsx"); s=p.read_text()
-          s=s.replace("last: number; idleSince: number;", "last: number; renderAt: number; idleSince: number;")
-          s=s.replace("last: performance.now(), idleSince: performance.now(),", "last: performance.now(), renderAt: 0, idleSince: performance.now(),")
-          s=s.replace("      setPos({ x: s.x, y: s.y });\n      force((n) => (n + 1) % 1e6);", "      if (now - s.renderAt >= 16.7) { s.renderAt = now; setPos({ x: s.x, y: s.y }); force((n) => (n + 1) % 1e6); }")
-          p.write_text(s)
           # Correct prayer calculations for the selected city's civil date and daylight-saving offset.
           p=Path("src/lib/downloads.ts"); s=p.read_text()
           s=s.replace('title: string; thumb?: string; author?: string; duration?: number;','title: string; thumb?: string; author?: string; description?: string; duration?: number;')
