@@ -197,7 +197,7 @@ jobs:
           PY
           if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then npm run build; fi
           # Install Capacitor's Android toolchain into CI only; leave project manifests unchanged.
-          npm install --no-save --package-lock=false "@capacitor/core@^8.0.0" "@capacitor/android@^8.0.0" "@capacitor/cli@^8.0.0"
+          npm install --no-save "@capacitor/core@^8.0.0" "@capacitor/android@^8.0.0" "@capacitor/cli@^8.0.0"
           npx cap --version
           if [[ ! -d android ]]; then npx cap add android; fi
           npx cap sync android
