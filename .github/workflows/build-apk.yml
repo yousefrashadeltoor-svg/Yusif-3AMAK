@@ -163,6 +163,13 @@ jobs:
         run: |
           set -euo pipefail
           cd "${{ steps.inspect.outputs.project_root }}"
+          # Restore the missing dawn ambience photo required by src/lib/ambience.ts.
+          mkdir -p src/assets/photos
+          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
+            "https://images.unsplash.com/photo-1517359795165-71871b9e3266?auto=format&fit=crop&fm=jpg&ixid=NHwxMjA3fDA%3D&ixlib=rb-4.1.0&q=82&w=1920" \
+            --output src/assets/photos/dawn.jpg
+          test -s src/assets/photos/dawn.jpg
+          file src/assets/photos/dawn.jpg
           npm ci
           if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then npm run build; fi
           if [[ ! -d android ]]; then npx cap add android; fi
