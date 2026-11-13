@@ -165,6 +165,55 @@ jobs:
           cd "${{ steps.inspect.outputs.project_root }}"
           # Generate the project's intended offline assets, then restore the requested real dawn photo.
           npm ci
+          # Capacitor packages are required by the web bridge at compile time and by the Android platform.
+          npm install --no-save "@capacitor/core@^8.0.0" "@capacitor/android@^8.0.0" "@capacitor/cli@^8.0.0"
+          # Replace the archive's legacy window.Capacitor.Plugins lookup with the supported Capacitor 8 registry.
+          cat > src/lib/nativeBridge.ts <<'EOF'
+          import { Capacitor, registerPlugin } from "@capacitor/core";
+          export interface DayflowNative {
+            scheduleAlarm(opts: { id:string; time:string; date?:string; days:number[]; label:string; soundUri?:string; vibrate:boolean; snooze:number; enabled?:boolean }): Promise<{scheduled?:boolean}>;
+            cancelAlarm(opts:{id:string}):Promise<{cancelled?:boolean}>;
+            getDeviceTones():Promise<{tones:Array<{title:string;uri:string;type:string}>}>;
+            pinWidget(opts:{designId:string;style:string;w:number;h:number}):Promise<{pinned:boolean}>;
+            openWidgetHub():Promise<void>;
+            startCompanionOverlay(opts:{enabled:boolean;size:number;opacity:number;modelId?:string}):Promise<{hasPermission:boolean}>;
+            requestOverlayPermission():Promise<void>;
+            enqueueDownload(opts:{url:string;name:string;preset?:string}):Promise<{downloadId?:number;queued?:boolean}>;
+            analyzeLink(opts:{url:string}):Promise<{json:string}>;
+            startDownload(opts:{id:string;url:string;name:string;engines:string[];format:string;quality:string;saveDir:string;connections:number}):Promise<{downloadId?:number;queued?:boolean}>;
+            pauseDownload(opts:{id:string}):Promise<void>; cancelDownload(opts:{id:string}):Promise<void>;
+            updateEngines():Promise<{ytdlp:string}>; openSniffer(opts:{url:string}):Promise<void>;
+            getPendingShare():Promise<{text:string}>; syncState(opts:{json:string}):Promise<void>;
+            showNotification(opts:{title:string;body:string;channel?:string;id?:number}):Promise<void>;
+          }
+          const DayflowBridge=registerPlugin<DayflowNative>("DayflowBridge");
+          export const isAndroidApk=()=>Capacitor.isNativePlatform() && Capacitor.getPlatform()==="android";
+          const call=<K extends keyof DayflowNative>(name:K,...args:Parameters<DayflowNative[K]>):ReturnType<DayflowNative[K]>|undefined=>{
+            if(!isAndroidApk()) return undefined;
+            const fn=DayflowBridge[name] as (...a:Parameters<DayflowNative[K]>)=>ReturnType<DayflowNative[K]>;
+            if(typeof fn!=="function") return Promise.reject(new Error("Android native feature is not installed: "+String(name))) as ReturnType<DayflowNative[K]>;
+            return fn(...args);
+          };
+          export const nativeBridge={
+            scheduleAlarm:(o:Parameters<DayflowNative["scheduleAlarm"]>[0])=>call("scheduleAlarm",o),
+            cancelAlarm:(o:Parameters<DayflowNative["cancelAlarm"]>[0])=>call("cancelAlarm",o),
+            getDeviceTones:()=>call("getDeviceTones"),
+            pinWidget:(o:Parameters<DayflowNative["pinWidget"]>[0])=>call("pinWidget",o),
+            openWidgetHub:()=>call("openWidgetHub"),
+            startCompanionOverlay:(o:Parameters<DayflowNative["startCompanionOverlay"]>[0])=>call("startCompanionOverlay",o),
+            requestOverlayPermission:()=>call("requestOverlayPermission"),
+            enqueueDownload:(o:Parameters<DayflowNative["enqueueDownload"]>[0])=>call("enqueueDownload",o),
+            analyzeLink:(o:Parameters<DayflowNative["analyzeLink"]>[0])=>call("analyzeLink",o),
+            startDownload:(o:Parameters<DayflowNative["startDownload"]>[0])=>call("startDownload",o),
+            pauseDownload:(o:Parameters<DayflowNative["pauseDownload"]>[0])=>call("pauseDownload",o),
+            cancelDownload:(o:Parameters<DayflowNative["cancelDownload"]>[0])=>call("cancelDownload",o),
+            updateEngines:()=>call("updateEngines"),
+            openSniffer:(o:Parameters<DayflowNative["openSniffer"]>[0])=>call("openSniffer",o),
+            getPendingShare:()=>call("getPendingShare"),
+            syncState:(json:string)=>call("syncState",{json}),
+            showNotification:(o:Parameters<DayflowNative["showNotification"]>[0])=>call("showNotification",o)
+          };
+          EOF
           node gen-assets.mjs
           curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
             "https://images.unsplash.com/photo-1517359795165-71871b9e3266?auto=format&fit=crop&fm=jpg&ixid=NHwxMjA3fDA%3D&ixlib=rb-4.1.0&q=82&w=1920" \
@@ -196,11 +245,55 @@ jobs:
           print("All statically imported local image assets are present.")
           PY
           if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then npm run build; fi
-          # Install Capacitor's Android toolchain into CI only; leave project manifests unchanged.
-          npm install --no-save "@capacitor/core@^8.0.0" "@capacitor/android@^8.0.0" "@capacitor/cli@^8.0.0"
           npx cap --version
           if [[ ! -d android ]]; then npx cap add android; fi
           npx cap sync android
+          # Install the native Android implementation maintained in this repository.
+          base64 --decode "$GITHUB_WORKSPACE/android-native/native-source.zip.b64" > /tmp/dayflow-native.zip
+          mkdir -p /tmp/dayflow-native android/app/src/main/java/app/dayflow/android android/app/src/main/res/layout android/app/src/main/res/xml
+          unzip -oq /tmp/dayflow-native.zip -d /tmp/dayflow-native
+          cp -R /tmp/dayflow-native/java/app/dayflow/android/. android/app/src/main/java/app/dayflow/android/
+          cp /tmp/dayflow-native/res/layout/dayflow_widget.xml android/app/src/main/res/layout/
+          cp /tmp/dayflow-native/res/xml/dayflow_widget_info.xml android/app/src/main/res/xml/
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          manifest=Path("android/app/src/main/AndroidManifest.xml")
+          s=manifest.read_text()
+          permissions=[
+            "android.permission.INTERNET","android.permission.SCHEDULE_EXACT_ALARM",
+            "android.permission.POST_NOTIFICATIONS","android.permission.SYSTEM_ALERT_WINDOW",
+            "android.permission.RECEIVE_BOOT_COMPLETED","android.permission.FOREGROUND_SERVICE",
+            "android.permission.FOREGROUND_SERVICE_SPECIAL_USE"
+          ]
+          for p in permissions:
+            tag=f'<uses-permission android:name="{p}" />'
+            if p not in s: s=s.replace("<manifest ", "<manifest ",1).replace(">",">",1)
+            if tag not in s: s=s.replace("</manifest>",f"    {tag}\\n</manifest>")
+          components="""
+              <activity android:name="app.dayflow.android.AlarmRingActivity" android:exported="false" android:showWhenLocked="true" android:turnScreenOn="true" android:excludeFromRecents="true" />
+              <receiver android:name="app.dayflow.android.AlarmReceiver" android:exported="false" />
+              <receiver android:name="app.dayflow.android.BootReceiver" android:enabled="true" android:exported="true">
+                  <intent-filter><action android:name="android.intent.action.BOOT_COMPLETED"/><action android:name="android.intent.action.TIME_SET"/><action android:name="android.intent.action.TIMEZONE_CHANGED"/></intent-filter>
+              </receiver>
+              <service android:name="app.dayflow.android.CompanionOverlayService" android:exported="false" android:foregroundServiceType="specialUse">
+                  <property android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE" android:value="User-enabled floating DAYFLOW companion overlay" />
+              </service>
+              <receiver android:name="app.dayflow.android.DayflowWidgetProvider" android:exported="true">
+                  <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter>
+                  <meta-data android:name="android.appwidget.provider" android:resource="@xml/dayflow_widget_info"/>
+              </receiver>
+          """
+          if "DayflowWidgetProvider" not in s: s=s.replace("</application>",components+"\\n</application>")
+          manifest.write_text(s)
+          activity=Path("android/app/src/main/java/app/dayflow/android/MainActivity.java")
+          if activity.exists():
+            a=activity.read_text()
+            if "registerPlugin(DayflowBridgePlugin.class)" not in a:
+              a=a.replace("super.onCreate(savedInstanceState);","registerPlugin(DayflowBridgePlugin.class);\\n        super.onCreate(savedInstanceState);")
+              activity.write_text(a)
+          else: raise SystemExit("Capacitor MainActivity.java not found; native plugin registration was not applied")
+          PY
           cd android
           if [[ -f ./gradlew ]]; then chmod +x ./gradlew; ./gradlew --no-daemon assembleDebug; else gradle --no-daemon assembleDebug; fi
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
