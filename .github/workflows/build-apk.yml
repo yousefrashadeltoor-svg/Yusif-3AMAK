@@ -378,6 +378,24 @@ jobs:
           if [[ -f ./gradlew ]]; then chmod +x ./gradlew; ./gradlew --no-daemon assembleDebug; else gradle --no-daemon assembleDebug; fi
           cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
 
+      - name: Export expanded source for native implementation audit
+        if: steps.inspect.outputs.kind == 'capacitor'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Yusif-3AMAK-expanded-source
+          path: |
+            ${{ steps.inspect.outputs.project_root }}/src/**
+            ${{ steps.inspect.outputs.project_root }}/android/app/src/main/java/**
+            ${{ steps.inspect.outputs.project_root }}/android/app/src/main/res/**
+            ${{ steps.inspect.outputs.project_root }}/android/app/src/main/AndroidManifest.xml
+            ${{ steps.inspect.outputs.project_root }}/android/app/build.gradle
+            ${{ steps.inspect.outputs.project_root }}/android/build.gradle
+            ${{ steps.inspect.outputs.project_root }}/package.json
+            ${{ steps.inspect.outputs.project_root }}/package-lock.json
+            ${{ steps.inspect.outputs.project_root }}/capacitor.config.*
+          if-no-files-found: warn
+          retention-days: 7
+
       - name: Build Expo or Cordova project
         if: contains(fromJSON('["expo","cordova"]'), steps.inspect.outputs.kind)
         shell: bash
