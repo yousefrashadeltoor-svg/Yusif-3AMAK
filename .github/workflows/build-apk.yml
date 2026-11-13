@@ -163,35 +163,19 @@ jobs:
         run: |
           set -euo pipefail
           cd "${{ steps.inspect.outputs.project_root }}"
-          # Restore missing ambience photos without changing application source files.
-          mkdir -p src/assets/photos
-          echo "Ambience photo references:"
-          grep -nE "assets/photos/[^'\"]+\.jpg" src/lib/ambience.ts || true
+          # Generate the project's intended offline assets, then restore the requested real dawn photo.
+          npm ci
+          node gen-assets.mjs
           curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
             "https://images.unsplash.com/photo-1517359795165-71871b9e3266?auto=format&fit=crop&fm=jpg&ixid=NHwxMjA3fDA%3D&ixlib=rb-4.1.0&q=82&w=1920" \
             --output src/assets/photos/dawn.jpg
-          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
-            "https://images.unsplash.com/photo-1434238803228-c45b4b3faf75?auto=format&fit=crop&fm=jpg&ixid=NHwxMjA3fDA%3D&ixlib=rb-4.1.0&q=82&w=1920" \
-            --output src/assets/photos/noon.jpg
-          curl --fail --location --retry 3 --retry-delay 2 --connect-timeout 20 --max-time 120 \
-            "https://images.unsplash.com/photo-1649200893528-972b2b6b942b?auto=format&fit=crop&fm=jpg&ixid=NHwxMjA3fDA%3D&ixlib=rb-4.1.0&q=82&w=1920" \
-            --output src/assets/art/fanous.jpg
           test -s src/assets/photos/dawn.jpg
-          test -s src/assets/photos/noon.jpg
-          test -s src/assets/art/fanous.jpg
-          file src/assets/photos/dawn.jpg src/assets/photos/noon.jpg src/assets/art/fanous.jpg
-          echo "===== Asset generator source ====="
-          sed -n '1,260p' gen-assets.mjs
-          echo "===== Asset manifest ====="
-          cat assets-manifest.json
-          echo "===== Package scripts ====="
-          node -e "console.log(JSON.stringify(require('./package.json').scripts || {}, null, 2))"
-          npm ci
+          file src/assets/photos/dawn.jpg
           python3 - <<'PY'
           import pathlib, re
           root = pathlib.Path("src").resolve()
           pattern = re.compile(r"""(?:from\s*|import\s*\()\s*['"]([^'"]+\.(?:png|jpe?g|webp|gif|avif))['"]""", re.I)
-          print("Missing relative image imports:")
+          missing = []
           for source in root.rglob("*"):
               if source.suffix not in {".ts", ".tsx", ".js", ".jsx"}:
                   continue
@@ -204,7 +188,12 @@ jobs:
                       continue
                   target = (source.parent / spec).resolve()
                   if root in target.parents and not target.exists():
-                      print(f"{source.relative_to(root)} -> {target.relative_to(root)}")
+                      missing.append(f"{source.relative_to(root)} -> {target.relative_to(root)}")
+          if missing:
+              print("Missing image imports:")
+              print("\n".join(missing))
+              raise SystemExit(1)
+          print("All statically imported local image assets are present.")
           PY
           if node -e "process.exit(require('./package.json').scripts?.build ? 0 : 1)"; then npm run build; fi
           if [[ ! -d android ]]; then npx cap add android; fi
