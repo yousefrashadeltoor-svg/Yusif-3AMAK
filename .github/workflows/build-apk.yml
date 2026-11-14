@@ -297,7 +297,31 @@ jobs:
           if [[ ! -d android ]]; then npx cap add android; fi
           npx cap sync android
           # Install the native Android implementation maintained in this repository.
-          base64 --decode "$GITHUB_WORKSPACE/android-native/native-source.zip.b64" > /tmp/dayflow-native.zip
+          python3 - <<'PY'
+          import base64, io, pathlib, zipfile
+          source = pathlib.Path("android-native/native-source.zip.b64").read_bytes().strip()
+          for _ in range(3):
+              if source.startswith(b"PK\x03\x04"):
+                  break
+              source = base64.b64decode(source)
+          else:
+              raise SystemExit("Native source archive is not a ZIP or base64-encoded ZIP.")
+          with zipfile.ZipFile(io.BytesIO(source)) as archive:
+              corrupt = archive.testzip()
+              if corrupt:
+                  raise SystemExit("Native source ZIP contains a corrupt entry: " + corrupt)
+              names = set(archive.namelist())
+              required = {
+                  "java/app/dayflow/android/DayflowBridgePlugin.java",
+                  "res/layout/dayflow_widget.xml",
+                  "res/xml/dayflow_widget_info.xml",
+              }
+              missing = required - names
+              if missing:
+                  raise SystemExit("Native source ZIP is missing: " + ", ".join(sorted(missing)))
+          pathlib.Path("/tmp/dayflow-native.zip").write_bytes(source)
+          print("Validated native source ZIP and required Android components.")
+          PY
           mkdir -p /tmp/dayflow-native android/app/src/main/java/app/dayflow/android android/app/src/main/res/layout android/app/src/main/res/xml
           unzip -oq /tmp/dayflow-native.zip -d /tmp/dayflow-native
           cp -R /tmp/dayflow-native/java/app/dayflow/android/. android/app/src/main/java/app/dayflow/android/
@@ -376,7 +400,44 @@ jobs:
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
           # Add the Android overlay, widget selection handoff, and persistent task reminders.
-          base64 --decode "$GITHUB_WORKSPACE/android-native/repair-scripts.tar.gz.b64" | tar -xz -C "$GITHUB_WORKSPACE/.github/scripts"
+          python3 - <<'PY'
+          import base64, io, pathlib, tarfile, zlib
+          source = pathlib.Path("android-native/repair-scripts.tar.gz.b64").read_bytes().strip()
+          for _ in range(3):
+              if source.startswith(b"\x1f\x8b"):
+                  break
+              source = base64.b64decode(source)
+          else:
+              raise SystemExit("Repair archive is neither gzip nor base64-encoded gzip.")
+          if len(source) < 18:
+              raise SystemExit("Repair archive is truncated.")
+          inflater = zlib.decompressobj(-zlib.MAX_WBITS)
+          tar_bytes = inflater.decompress(source[10:-8]) + inflater.flush()
+          if not inflater.eof:
+              raise SystemExit("Repair archive's compressed payload is incomplete.")
+          required = {"patch-native-runtime.py", "patch-widget-flow.py", "patch-native-reminders.py"}
+          with tarfile.open(fileobj=io.BytesIO(tar_bytes), mode="r:") as archive:
+              found = {}
+              for member in archive.getmembers():
+                  name = pathlib.PurePosixPath(member.name)
+                  if not member.isfile() or name.is_absolute() or ".." in name.parts:
+                      continue
+                  if name.name in required:
+                      if name.name in found:
+                          raise SystemExit("Duplicate repair script in archive: " + name.name)
+                      found[name.name] = archive.extractfile(member).read()
+          missing = required - found.keys()
+          if missing:
+              raise SystemExit("Repair archive is missing: " + ", ".join(sorted(missing)))
+          target = pathlib.Path(".github/scripts")
+          target.mkdir(parents=True, exist_ok=True)
+          for name, data in found.items():
+              if not data.strip():
+                  raise SystemExit("Repair script is empty: " + name)
+              compile(data.decode("utf-8"), name, "exec")
+              (target / name).write_bytes(data)
+          print("Recovered and syntax-checked all three Android repair scripts.")
+          PY
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
