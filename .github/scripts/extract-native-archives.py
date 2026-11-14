@@ -65,14 +65,31 @@ def gzip_payload(data: bytes) -> bytes:
         return payload
 
 def extract_repair_scripts() -> None:
-    raw = REPAIR_ARCHIVE.read_bytes()
-    if not raw.startswith(b"\x1f\x8b"):
-        raw = decode_until(raw, b"\x1f\x8b", "Repair archive")
+    # The source package is split into ordered text chunks so GitHub stores it
+    # as UTF-8 and each part can be independently inspected and recovered.
+    parts = sorted(
+        (REPO / "android-native").glob("repair-scripts-v2.part*.b64"),
+        key=lambda p: int(p.stem.rsplit("part", 1)[1]),
+    )
+    if not parts:
+        raise SystemExit("Repair source archive parts are missing.")
+    numbers = [int(p.stem.rsplit("part", 1)[1]) for p in parts]
+    expected = list(range(1, len(parts) + 1))
+    if numbers != expected:
+        raise SystemExit(f"Repair source archive parts are not contiguous: {numbers}")
+    encoded = b"".join(p.read_bytes().strip() for p in parts)
+    if len(encoded) % 4:
+        raise SystemExit("Repair source archive has an incomplete base64 sequence.")
+    try:
+        raw = base64.b64decode(encoded, validate=True)
+    except Exception as exc:
+        raise SystemExit(f"Repair source archive base64 is invalid: {exc}") from exc
     payload = gzip_payload(raw)
     required = {
         "patch-native-runtime.py",
         "patch-widget-flow.py",
         "patch-native-reminders.py",
+        "test_native_widget_repair.py",
     }
     found: dict[str, bytes] = {}
     with tarfile.open(fileobj=io.BytesIO(payload), mode="r:") as archive:
@@ -99,7 +116,7 @@ def extract_repair_scripts() -> None:
         except (UnicodeDecodeError, SyntaxError) as exc:
             raise SystemExit(f"Repair script failed syntax validation ({name}): {exc}") from exc
         (SCRIPTS / name).write_bytes(source)
-    print("Recovered and syntax-checked all three Android repair scripts.")
+    print("Recovered and syntax-checked all three Android repair scripts and their regression tests.")
 
 def validate_native_source() -> None:
     raw = decode_until(NATIVE_ARCHIVE.read_bytes(), b"PK\x03\x04", "Native source ZIP")
