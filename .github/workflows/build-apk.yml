@@ -376,7 +376,7 @@ jobs:
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
           # Add the Android overlay, widget selection handoff, and persistent task reminders.
-          tar -xzf "$GITHUB_WORKSPACE/android-native/repair-scripts.tar.gz.b64" -C "$GITHUB_WORKSPACE/.github/scripts"
+          base64 --decode "$GITHUB_WORKSPACE/android-native/repair-scripts.tar.gz.b64" | tar -xz -C "$GITHUB_WORKSPACE/.github/scripts"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
@@ -517,11 +517,32 @@ jobs:
           echo "No supported Android, Flutter, Capacitor, Expo, Cordova, or web entry point was found." | tee -a build-output/inspection.txt
           exit 1
 
+      - name: Verify APK output
+        if: success()
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$(find build-output -maxdepth 1 -type f -name '*.apk' -size +0c -print -quit)"
+          test -n "$APK"
+          python3 - "$APK" <<'PY'
+          import sys, zipfile
+          path = sys.argv[1]
+          with zipfile.ZipFile(path) as apk:
+              names = set(apk.namelist())
+              if "AndroidManifest.xml" not in names:
+                  raise SystemExit("APK validation failed: AndroidManifest.xml is missing")
+              if not any(name.startswith("classes") and name.endswith(".dex") for name in names):
+                  raise SystemExit("APK validation failed: no DEX bytecode was found")
+              corrupt = apk.testzip()
+              if corrupt:
+                  raise SystemExit("APK validation failed: corrupt ZIP entry " + corrupt)
+          print(f"Validated non-empty Android APK: {path}")
+
       - name: Upload APK and inspection report
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Yusif-3AMAK-APK
           path: build-output/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
