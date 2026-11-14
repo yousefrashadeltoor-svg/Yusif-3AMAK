@@ -375,11 +375,23 @@ jobs:
           PY
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
-          # Add the Android overlay, widget selection handoff, and persistent task reminders.
-          python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
+          # Keep patch order explicit: widget data bridge -> persistent reminders -> overlay sync.
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
-          # The native permission/sound and app-feature patches must be compiled into the Web assets.
+          python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
+          # Validate every patcher and run regression tests against the extracted real source.
+          python3 -m py_compile \
+            "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py" \
+            "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py" \
+            "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py" \
+            "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py" \
+            "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py" \
+            "$GITHUB_WORKSPACE/.github/scripts/test_native_widget_repair.py"
+          DAYFLOW_SOURCE_DIR="$GITHUB_WORKSPACE/${{ steps.inspect.outputs.project_root }}" \
+            python3 -m unittest discover \
+              -s "$GITHUB_WORKSPACE/.github/scripts" \
+              -p "test_native_widget_repair.py" -v
+          # Compile the patched Web assets only after native source regressions pass.
           npm run build
           npx cap sync android
           cd android
