@@ -40,7 +40,7 @@ jobs:
           gradle_roots = []
           for manifest in dest.rglob("app/src/main/AndroidManifest.xml"):
               app = manifest.parent.parent.parent
-              root = app.parent.parent
+              root = app.parent
               if (root / "settings.gradle").exists() or (root / "settings.gradle.kts").exists():
                   gradle_roots.append(root)
           if not gradle_roots:
@@ -57,7 +57,7 @@ jobs:
           main_files = list(root.glob("app/src/main/java/**/MainActivity.kt")) + list(root.glob("app/src/main/kotlin/**/MainActivity.kt"))
           if not main_files:
               raise SystemExit("BLOCKED: native Compose MainActivity.kt is missing.")
-          main_text = "\\n".join(p.read_text(encoding="utf-8") for p in main_files)
+          main_text = "\n".join(p.read_text(encoding="utf-8") for p in main_files)
           if "ComponentActivity" not in main_text or "setContent" not in main_text:
               raise SystemExit("BLOCKED: launcher activity is not a Jetpack Compose ComponentActivity.")
           if any(token in main_text for token in ("BridgeActivity", "WebView", "loadUrl(")):
@@ -81,12 +81,12 @@ jobs:
           gradle_text = ""
           for p in (root / "app/build.gradle", root / "app/build.gradle.kts", root / "build.gradle", root / "build.gradle.kts"):
               if p.exists():
-                  gradle_text += p.read_text(encoding="utf-8", errors="replace") + "\\n"
+                  gradle_text += p.read_text(encoding="utf-8", errors="replace") + "\n"
           if "compose" not in gradle_text.lower():
               raise SystemExit("BLOCKED: Jetpack Compose dependencies/buildFeatures were not found in Gradle configuration.")
 
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as out:
-              out.write(f"project_root={root.relative_to(base)}\\n")
+              out.write(f"project_root={root.relative_to(base)}\n")
           print("Native Compose source gate passed:", root.relative_to(base))
           PY
 
