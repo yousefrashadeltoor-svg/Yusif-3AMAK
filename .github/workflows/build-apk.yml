@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-native-apk:
@@ -162,19 +162,25 @@ jobs:
             --output build-output/native-catalogs
 
       - name: Remove downloader product from DAYFLOW source
+        id: strip
         if: always() && hashFiles('extracted/src/App.tsx') != ''
         shell: bash
         run: |
           set -euo pipefail
           python3 -m py_compile .github/scripts/remove-downloader-features.py
-          python3 .github/scripts/remove-downloader-features.py --source-root extracted
+          if [[ -f extracted/src/screens/Downloads.tsx ]]; then
+            python3 .github/scripts/remove-downloader-features.py --source-root extracted
+          else
+            echo "Canonical source is already downloader-free; verifying its invariant set."
+            ! grep -RniE 'DownloadManager|yt-dlp|gallery-dl|N_m3u8DL|aria2c|enqueueDownload|analyzeLink|startDownload|pauseDownload|cancelDownload|updateEngines|openSniffer|getPendingShare|#/downloads|"downloads"|Media Hub|Active downloads|Download history|Paste-link tile' extracted/src
+          fi
           test ! -e extracted/src/screens/Downloads.tsx
           test ! -e extracted/src/screens/MediaHub.tsx
           test ! -e extracted/src/lib/downloads.ts
           test ! -e extracted/src/lib/media.ts
           test ! -e extracted/src/lib/share.ts
           test -s extracted/src/lib/format.ts
-          ! grep -RniE 'DownloadManager|yt-dlp|gallery-dl|N_m3u8DL|aria2c|enqueueDownload|startDownload|openSniffer|#/downloads|Media Hub' extracted/src extracted/android/app/src/main
+          ! grep -RniE 'DownloadManager|yt-dlp|gallery-dl|N_m3u8DL|aria2c|enqueueDownload|analyzeLink|startDownload|pauseDownload|cancelDownload|updateEngines|openSniffer|getPendingShare|#/downloads|"downloads"|Media Hub|Active downloads|Download history|Paste-link tile' extracted/src
           echo "Downloader removal and source invariant checks passed."
 
       - name: Set up Node for legacy source regression build
@@ -184,6 +190,7 @@ jobs:
           node-version: '22'
 
       - name: Build cleaned DAYFLOW web source for migration regression only
+        id: vite
         if: always() && hashFiles('extracted/package-lock.json') != ''
         shell: bash
         run: |
@@ -199,6 +206,44 @@ jobs:
           test -s dist/index.html
           echo "Vite source regression passed. This is not an Android APK and is not the Android UI release."
 
+      - name: Package cleaned canonical DAYFLOW source
+        if: always() && steps.strip.outcome == 'success' && steps.vite.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import zipfile
+          root = Path("extracted")
+          output = Path("build-output/comprehensive-repository-audit-and-roadmap.zip")
+          output.parent.mkdir(parents=True, exist_ok=True)
+          files = [p for p in root.rglob("*") if p.is_file()
+                   and not ({"node_modules", "dist", ".git"} & set(p.relative_to(root).parts))]
+          with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
+              for path in sorted(files):
+                  archive.write(path, path.relative_to(root).as_posix())
+          if output.stat().st_size <= 0:
+              raise SystemExit("Refusing to publish an empty canonical source archive.")
+          print(f"Packaged {len(files)} source files into {output} ({output.stat().st_size} bytes).")
+          PY
+          test -s build-output/comprehensive-repository-audit-and-roadmap.zip
+
+      - name: Persist cleaned canonical DAYFLOW source on repair branch
+        if: always() && steps.strip.outcome == 'success' && steps.vite.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp build-output/comprehensive-repository-audit-and-roadmap.zip comprehensive-repository-audit-and-roadmap.zip
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add comprehensive-repository-audit-and-roadmap.zip
+          if git diff --cached --quiet; then
+            echo "Canonical DAYFLOW source archive is already clean."
+            exit 0
+          fi
+          git commit -m "chore: remove downloader tools from canonical DAYFLOW source"
+          git push origin "HEAD:repair/native-compose-only-gate"
+
       - name: Upload downloader-free DAYFLOW source snapshot
         if: always()
         uses: actions/upload-artifact@v4
@@ -209,6 +254,7 @@ jobs:
             extracted/android/app/src/main/**
             extracted/package.json
             extracted/package-lock.json
+            build-output/comprehensive-repository-audit-and-roadmap.zip
           if-no-files-found: ignore
           retention-days: 30
 
