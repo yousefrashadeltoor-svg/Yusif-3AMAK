@@ -300,6 +300,7 @@ jobs:
             build-output/comprehensive-repository-audit-and-roadmap.zip
             build-output/native-source-sanitized.zip.b64
             build-output/native-repair-archive-audit.txt
+            build-output/native-repair-scripts-review/**
           if-no-files-found: ignore
           retention-days: 30
 
