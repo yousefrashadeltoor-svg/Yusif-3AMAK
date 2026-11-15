@@ -590,6 +590,7 @@ jobs:
               if corrupt:
                   raise SystemExit("APK validation failed: corrupt ZIP entry " + corrupt)
           print(f"Validated non-empty Android APK: {path}")
+          PY
 
       - name: Upload APK and inspection report
         if: success()
