@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import base64
 import io
+import re
 import zipfile
 from pathlib import Path
 
@@ -39,12 +40,12 @@ def decode_zip(raw: bytes) -> bytes:
 
 def patch_plugin(source: str) -> tuple[str, bool]:
     changed = False
-    if START in source:
-        a = source.index(START)
-        b = source.find(END, a + len(START))
-        if b < 0:
-            raise RuntimeError("Native bridge downloader block has no permission-method boundary.")
-        source = source[:a] + source[b:]
+    start_match = re.search(r"@PluginMethod\\s+public\\s+void\\s+analyzeLink\\s*\\(PluginCall\\s+call\\)\\s*\\{", source)
+    end_match = re.search(r"@PluginMethod\\s+public\\s+void\\s+requestNotificationsPermission\\s*\\(PluginCall\\s+call\\)\\s*\\{", source)
+    if start_match:
+        if not end_match or end_match.start() <= start_match.start():
+            raise RuntimeError("Native bridge downloader block has no notification-permission boundary.")
+        source = source[:start_match.start()] + source[end_match.start():]
         changed = True
     elif "analyzeLink" in source or "directDownload(" in source or "DownloadManager" in source:
         raise RuntimeError("Native bridge contains download logic but its known method boundary changed.")
