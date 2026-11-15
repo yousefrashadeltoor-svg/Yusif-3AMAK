@@ -403,22 +403,6 @@ jobs:
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
-          # Capacitor PluginCall.getDouble returns a boxed Double; explicitly unbox
-          # before passing the value to Intent.putExtra(float).
-          python3 - <<'PY'
-          from pathlib import Path
-          plugin = Path("android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java")
-          source = plugin.read_text(encoding="utf-8")
-          for field in ("size", "opacity"):
-              boxed = f'intent.putExtra("{field}", (float)call.getDouble("{field}", 1.0));'
-              unboxed = f'intent.putExtra("{field}", call.getDouble("{field}", 1.0).floatValue());'
-              if boxed in source:
-                  source = source.replace(boxed, unboxed, 1)
-              elif unboxed not in source:
-                  raise SystemExit(f"Expected {field} overlay value conversion was not found; refusing an unsafe Java patch.")
-          plugin.write_text(source, encoding="utf-8")
-          print("Validated boxed Double values are explicitly converted before Android float extras.")
-          PY
           # Validate every patcher and run regression tests against the extracted real source.
           python3 -m py_compile \
             "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py" \
