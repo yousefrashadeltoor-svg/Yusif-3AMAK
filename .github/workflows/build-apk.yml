@@ -202,6 +202,18 @@ jobs:
             --output build-output/native-source-sanitized.zip.b64
           test -s build-output/native-source-sanitized.zip.b64
 
+      - name: Sanitize retained Android repair-script archive
+        id: repair_clean
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/sanitize-repair-script-archive.py
+          python3 .github/scripts/sanitize-repair-script-archive.py \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --report build-output/native-repair-archive-sanitized.txt
+          test -s build-output/native-repair-archive-sanitized.txt
+
       - name: Inspect retained Android repair archive for downloader residue
         if: always()
         shell: bash
@@ -259,13 +271,13 @@ jobs:
           test -s build-output/comprehensive-repository-audit-and-roadmap.zip
 
       - name: Persist cleaned canonical DAYFLOW source on repair branch
-        if: always() && (steps.strip.outputs.changed == 'true' || steps.native_clean.outputs.changed == 'true') && steps.vite.outcome == 'success' && steps.native_clean.outcome == 'success'
+        if: always() && (steps.strip.outputs.changed == 'true' || steps.native_clean.outputs.changed == 'true' || steps.repair_clean.outputs.changed == 'true') && steps.vite.outcome == 'success' && steps.native_clean.outcome == 'success' && steps.repair_clean.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
           STASHED_NATIVE=false
-          if ! git diff --quiet -- android-native/native-source.zip.b64; then
-            git stash push -m "DAYFLOW sanitized native source archive" -- android-native/native-source.zip.b64
+          if ! git diff --quiet -- android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64; then
+            git stash push -m "DAYFLOW sanitized native source and repair archives" -- android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64
             STASHED_NATIVE=true
           fi
           git fetch origin repair/native-compose-only-gate
@@ -279,7 +291,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add android-native/native-source.zip.b64
+          git add android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64
           if git diff --cached --quiet; then
             echo "Canonical source and native archive are already clean."
             exit 0
@@ -300,6 +312,7 @@ jobs:
             build-output/comprehensive-repository-audit-and-roadmap.zip
             build-output/native-source-sanitized.zip.b64
             build-output/native-repair-archive-audit.txt
+            build-output/native-repair-archive-sanitized.txt
             build-output/native-repair-scripts-review/**
           if-no-files-found: ignore
           retention-days: 30
