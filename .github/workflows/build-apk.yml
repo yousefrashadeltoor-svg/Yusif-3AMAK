@@ -157,6 +157,7 @@ jobs:
       # source archive. This gives a verified migration artifact without ever
       # producing or publishing a WebView APK.
       - name: Extract and validate DAYFLOW native catalogs
+        id: catalogs
         if: always() && hashFiles('extracted/src/lib/themes.ts', 'extracted/src/lib/widgets.ts') != ''
         shell: bash
         run: |
@@ -165,6 +166,15 @@ jobs:
           python3 .github/scripts/port-native-catalogs.py \
             --source-lib extracted/src/lib \
             --output build-output/native-catalogs
+          mkdir -p android-native/compose-catalog
+          changed=false
+          for file in themes.json widgets.json catalog-validation.json; do
+            if ! cmp -s "build-output/native-catalogs/$file" "android-native/compose-catalog/$file"; then
+              cp "build-output/native-catalogs/$file" "android-native/compose-catalog/$file"
+              changed=true
+            fi
+          done
+          echo "changed=$changed" >> "$GITHUB_OUTPUT"
 
       - name: Remove downloader product from DAYFLOW source
         id: strip
@@ -271,13 +281,13 @@ jobs:
           test -s build-output/comprehensive-repository-audit-and-roadmap.zip
 
       - name: Persist cleaned canonical DAYFLOW source on repair branch
-        if: always() && (steps.strip.outputs.changed == 'true' || steps.native_clean.outputs.changed == 'true' || steps.repair_clean.outputs.changed == 'true') && steps.vite.outcome == 'success' && steps.native_clean.outcome == 'success' && steps.repair_clean.outcome == 'success'
+        if: always() && (steps.strip.outputs.changed == 'true' || steps.native_clean.outputs.changed == 'true' || steps.repair_clean.outputs.changed == 'true' || steps.catalogs.outputs.changed == 'true') && steps.vite.outcome == 'success' && steps.native_clean.outcome == 'success' && steps.repair_clean.outcome == 'success' && steps.catalogs.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
           STASHED_NATIVE=false
-          if ! git diff --quiet -- android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64; then
-            git stash push -m "DAYFLOW sanitized native source and repair archives" -- android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64
+          if ! git diff --quiet -- android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64 android-native/compose-catalog/*.json; then
+            git stash push -m "DAYFLOW sanitized native archives and Compose catalogs" -- android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64 android-native/compose-catalog/*.json
             STASHED_NATIVE=true
           fi
           git fetch origin repair/native-compose-only-gate
@@ -291,7 +301,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64
+          git add android-native/native-source.zip.b64 android-native/repair-scripts-v2.part*.b64 android-native/compose-catalog/*.json
           if git diff --cached --quiet; then
             echo "Canonical source and native archive are already clean."
             exit 0
