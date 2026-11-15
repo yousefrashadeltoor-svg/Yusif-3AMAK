@@ -183,6 +183,18 @@ jobs:
           ! grep -RniE 'DownloadManager|yt-dlp|gallery-dl|N_m3u8DL|aria2c|enqueueDownload|analyzeLink|startDownload|pauseDownload|cancelDownload|updateEngines|openSniffer|getPendingShare|#/downloads|"downloads"|Media Hub|Active downloads|Download history|Paste-link tile' extracted/src
           echo "Downloader removal and source invariant checks passed."
 
+      - name: Sanitize retained Android native system-feature archive
+        id: native_clean
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/sanitize-native-archive.py
+          python3 .github/scripts/sanitize-native-archive.py \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --output build-output/native-source-sanitized.zip.b64
+          test -s build-output/native-source-sanitized.zip.b64
+
       - name: Set up Node for legacy source regression build
         if: always() && hashFiles('extracted/package-lock.json') != ''
         uses: actions/setup-node@v4
@@ -229,14 +241,14 @@ jobs:
           test -s build-output/comprehensive-repository-audit-and-roadmap.zip
 
       - name: Persist cleaned canonical DAYFLOW source on repair branch
-        if: always() && steps.strip.outcome == 'success' && steps.vite.outcome == 'success'
+        if: always() && steps.strip.outcome == 'success' && steps.vite.outcome == 'success' && steps.native_clean.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
           cp build-output/comprehensive-repository-audit-and-roadmap.zip comprehensive-repository-audit-and-roadmap.zip
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add comprehensive-repository-audit-and-roadmap.zip
+          git add comprehensive-repository-audit-and-roadmap.zip android-native/native-source.zip.b64
           if git diff --cached --quiet; then
             echo "Canonical DAYFLOW source archive is already clean."
             exit 0
@@ -255,6 +267,7 @@ jobs:
             extracted/package.json
             extracted/package-lock.json
             build-output/comprehensive-repository-audit-and-roadmap.zip
+            build-output/native-source-sanitized.zip.b64
           if-no-files-found: ignore
           retention-days: 30
 
