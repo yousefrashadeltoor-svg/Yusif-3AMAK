@@ -1,0 +1,2467 @@
+{
+  "schemaVersion": 1,
+  "source": "src/lib/widgets.ts",
+  "sourceCount": 137,
+  "count": 137,
+  "removedDownloaderDefinitions": [
+    "Active downloads",
+    "Download history",
+    "Paste-link tile"
+  ],
+  "forms": [
+    "1x1",
+    "2x1",
+    "2x2",
+    "4x1",
+    "4x2",
+    "4x4"
+  ],
+  "categories": [
+    {
+      "id": "clock",
+      "en": "Clock",
+      "ar": "الساعة"
+    },
+    {
+      "id": "alarms",
+      "en": "Alarms",
+      "ar": "المنبهات"
+    },
+    {
+      "id": "calendar",
+      "en": "Calendar",
+      "ar": "التقويم"
+    },
+    {
+      "id": "occasions",
+      "en": "Occasions",
+      "ar": "المناسبات"
+    },
+    {
+      "id": "plan",
+      "en": "Plan & today",
+      "ar": "الخطة واليوم"
+    },
+    {
+      "id": "tasks",
+      "en": "Tasks & notes",
+      "ar": "المهام والملاحظات"
+    },
+    {
+      "id": "habits",
+      "en": "Habits & health",
+      "ar": "العادات والصحة"
+    },
+    {
+      "id": "focus",
+      "en": "Focus & study",
+      "ar": "التركيز والدراسة"
+    },
+    {
+      "id": "review",
+      "en": "Review & stats",
+      "ar": "المراجعة والإحصاءات"
+    },
+    {
+      "id": "media",
+      "en": "Media library",
+      "ar": "مكتبة الوسائط"
+    },
+    {
+      "id": "utility",
+      "en": "Utility",
+      "ar": "أدوات"
+    },
+    {
+      "id": "companion",
+      "en": "Companion",
+      "ar": "الرفيق"
+    }
+  ],
+  "styles": [
+    {
+      "id": "oneui",
+      "en": "One UI Glass",
+      "ar": "زجاج One UI"
+    },
+    {
+      "id": "material",
+      "en": "Material You",
+      "ar": "Material You"
+    },
+    {
+      "id": "ios",
+      "en": "iOS-inspired",
+      "ar": "مستوحى من iOS"
+    },
+    {
+      "id": "editorial",
+      "en": "Editorial",
+      "ar": "تحريري"
+    },
+    {
+      "id": "neon",
+      "en": "Neon",
+      "ar": "نيون"
+    },
+    {
+      "id": "paper",
+      "en": "Paper",
+      "ar": "ورق"
+    },
+    {
+      "id": "clay",
+      "en": "Soft Clay",
+      "ar": "صلصال"
+    },
+    {
+      "id": "outline",
+      "en": "Minimal Outline",
+      "ar": "خطوط بسيطة"
+    },
+    {
+      "id": "amoled",
+      "en": "AMOLED",
+      "ar": "أموليد"
+    },
+    {
+      "id": "seasonal",
+      "en": "Seasonal",
+      "ar": "موسمي"
+    }
+  ],
+  "fonts": {
+    "sans": {
+      "en": "System sans",
+      "ar": "خط النظام",
+      "stack": "system-ui, \"Segoe UI\", \"Noto Sans Arabic\", sans-serif"
+    },
+    "naskh": {
+      "en": "Naskh (serif)",
+      "ar": "نسخ",
+      "stack": "\"Noto Naskh Arabic\", \"Amiri\", \"Traditional Arabic\", serif"
+    },
+    "kufi": {
+      "en": "Kufi",
+      "ar": "كوفي",
+      "stack": "\"Noto Kufi Arabic\", \"Reem Kufi\", \"Segoe UI\", sans-serif"
+    },
+    "cairo": {
+      "en": "Cairo",
+      "ar": "القاهرة",
+      "stack": "\"Cairo\", \"Noto Kufi Arabic\", system-ui, sans-serif"
+    },
+    "rounded": {
+      "en": "Rounded",
+      "ar": "مستدير",
+      "stack": "ui-rounded, \"Noto Sans Arabic\", system-ui, sans-serif"
+    },
+    "mono": {
+      "en": "Mono numerals",
+      "ar": "أرقام ثابتة",
+      "stack": "ui-monospace, \"Noto Sans Arabic\", monospace"
+    }
+  },
+  "widgets": [
+    {
+      "id": "clock-minimal-digital",
+      "en": "Minimal digital",
+      "ar": "رقمية بسيطة",
+      "category": "clock",
+      "archetype": "digital",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-bold-block",
+      "en": "Bold block",
+      "ar": "كتلة عريضة",
+      "category": "clock",
+      "archetype": "digital",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-split-flap",
+      "en": "Split flap",
+      "ar": "لوحة متقلبة",
+      "category": "clock",
+      "archetype": "flip",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-flip-clock",
+      "en": "Flip clock",
+      "ar": "ساعة قلّابة",
+      "category": "clock",
+      "archetype": "flip",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-dot-matrix",
+      "en": "Dot-matrix",
+      "ar": "مصفوفة نقطية",
+      "category": "clock",
+      "archetype": "digital",
+      "variant": 4,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-stacked-words",
+      "en": "Stacked words",
+      "ar": "كلمات متراصة",
+      "category": "clock",
+      "archetype": "digital",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-analog-classic",
+      "en": "Analog classic",
+      "ar": "عقارب كلاسيكية",
+      "category": "clock",
+      "archetype": "analog",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-analog-skeleton",
+      "en": "Analog skeleton",
+      "ar": "عقارب هيكلية",
+      "category": "clock",
+      "archetype": "analog",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-analog-luxury",
+      "en": "Analog luxury",
+      "ar": "عقارب فاخرة",
+      "category": "clock",
+      "archetype": "analog",
+      "variant": 8,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-analog-minimal",
+      "en": "Analog minimal",
+      "ar": "عقارب بسيطة",
+      "category": "clock",
+      "archetype": "analog",
+      "variant": 9,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-sun-arc-clock",
+      "en": "Sun-arc clock",
+      "ar": "ساعة قوس الشمس",
+      "category": "clock",
+      "archetype": "sunarc",
+      "variant": 10,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-orbit-clock",
+      "en": "Orbit clock",
+      "ar": "ساعة المدار",
+      "category": "clock",
+      "archetype": "analog",
+      "variant": 11,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-world-clock",
+      "en": "World clock",
+      "ar": "ساعة عالمية",
+      "category": "clock",
+      "archetype": "world",
+      "variant": 12,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-dual-time",
+      "en": "Dual-time",
+      "ar": "توقيت مزدوج",
+      "category": "clock",
+      "archetype": "world",
+      "variant": 13,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-clock-day-summary",
+      "en": "Clock + day summary",
+      "ar": "ساعة + ملخص اليوم",
+      "category": "clock",
+      "archetype": "digital",
+      "variant": 14,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "clock-bedside-clock",
+      "en": "Bedside clock",
+      "ar": "ساعة السرير",
+      "category": "clock",
+      "archetype": "digital",
+      "variant": 15,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-next-alarm-pill",
+      "en": "Next alarm pill",
+      "ar": "كبسولة المنبه التالي",
+      "category": "alarms",
+      "archetype": "countdown",
+      "variant": 0,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-alarm-ring-dial",
+      "en": "Alarm ring-dial",
+      "ar": "قرص المنبه",
+      "category": "alarms",
+      "archetype": "dial",
+      "variant": 1,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-alarm-list-toggles",
+      "en": "Alarm list + toggles",
+      "ar": "قائمة المنبهات",
+      "category": "alarms",
+      "archetype": "checklist",
+      "variant": 2,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-alarm-timeline-strip",
+      "en": "Alarm timeline strip",
+      "ar": "شريط المنبهات الزمني",
+      "category": "alarms",
+      "archetype": "timeline",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-alarm-week-grid",
+      "en": "Alarm week grid",
+      "ar": "شبكة أسبوع المنبهات",
+      "category": "alarms",
+      "archetype": "week",
+      "variant": 4,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-countdown-to-alarm",
+      "en": "Countdown to alarm",
+      "ar": "عد تنازلي للمنبه",
+      "category": "alarms",
+      "archetype": "countdown",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-sleep-alarm-combo",
+      "en": "Sleep-alarm combo",
+      "ar": "النوم والمنبه",
+      "category": "alarms",
+      "archetype": "dial",
+      "variant": 6,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "alarms-snooze-tracker",
+      "en": "Snooze tracker",
+      "ar": "متتبع الغفوة",
+      "category": "alarms",
+      "archetype": "bars",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-month-compact",
+      "en": "Month compact",
+      "ar": "شهر مدمج",
+      "category": "calendar",
+      "archetype": "month",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-month-with-artwork",
+      "en": "Month with artwork",
+      "ar": "شهر بالزخارف",
+      "category": "calendar",
+      "archetype": "month",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-month-heatmap",
+      "en": "Month heatmap",
+      "ar": "خريطة حرارية شهرية",
+      "category": "calendar",
+      "archetype": "heatmap",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-week-strip",
+      "en": "Week strip",
+      "ar": "شريط الأسبوع",
+      "category": "calendar",
+      "archetype": "week",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-week-columns",
+      "en": "Week columns",
+      "ar": "أعمدة الأسبوع",
+      "category": "calendar",
+      "archetype": "week",
+      "variant": 4,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-agenda-list",
+      "en": "Agenda list",
+      "ar": "قائمة الأجندة",
+      "category": "calendar",
+      "archetype": "list",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-agenda-with-artwork",
+      "en": "Agenda with artwork",
+      "ar": "أجندة بالزخارف",
+      "category": "calendar",
+      "archetype": "list",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-year-dots",
+      "en": "Year dots",
+      "ar": "نقاط السنة",
+      "category": "calendar",
+      "archetype": "mosaic",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-hijri-month",
+      "en": "Hijri month",
+      "ar": "الشهر الهجري",
+      "category": "calendar",
+      "archetype": "month",
+      "variant": 8,
+      "interactive": false,
+      "forms": [
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-coptic-month",
+      "en": "Coptic month",
+      "ar": "الشهر القبطي",
+      "category": "calendar",
+      "archetype": "month",
+      "variant": 9,
+      "interactive": false,
+      "forms": [
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-tri-calendar-date-card",
+      "en": "Tri-calendar date card",
+      "ar": "بطاقة التقاويم الثلاثة",
+      "category": "calendar",
+      "archetype": "tri",
+      "variant": 10,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-day-ring-24h",
+      "en": "Day ring (24h)",
+      "ar": "حلقة اليوم ٢٤ س",
+      "category": "calendar",
+      "archetype": "ring",
+      "variant": 11,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-schedule-river",
+      "en": "Schedule river",
+      "ar": "نهر الجدول",
+      "category": "calendar",
+      "archetype": "timeline",
+      "variant": 12,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "calendar-date-flip",
+      "en": "Date flip",
+      "ar": "تاريخ قلاب",
+      "category": "calendar",
+      "archetype": "flip",
+      "variant": 13,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-occasion-hero",
+      "en": "Occasion hero",
+      "ar": "بطل المناسبة",
+      "category": "occasions",
+      "archetype": "hero",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-occasion-countdown-ring",
+      "en": "Occasion countdown ring",
+      "ar": "حلقة العد للمناسبة",
+      "category": "occasions",
+      "archetype": "ring",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-upcoming-carousel",
+      "en": "Upcoming carousel",
+      "ar": "المناسبات القادمة",
+      "category": "occasions",
+      "archetype": "list",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-ramadan-imsakiya",
+      "en": "Ramadan imsakiya",
+      "ar": "إمساكية رمضان",
+      "category": "occasions",
+      "archetype": "list",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-iftar-countdown",
+      "en": "Iftar countdown",
+      "ar": "العد للإفطار",
+      "category": "occasions",
+      "archetype": "countdown",
+      "variant": 4,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-eid-greeting-card",
+      "en": "Eid greeting card",
+      "ar": "بطاقة تهنئة العيد",
+      "category": "occasions",
+      "archetype": "hero",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-season-greeting",
+      "en": "Season greeting",
+      "ar": "تحية الموسم",
+      "category": "occasions",
+      "archetype": "hero",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-nile-egyptian-seasons",
+      "en": "Nile & Egyptian seasons",
+      "ar": "النيل والمواسم المصرية",
+      "category": "occasions",
+      "archetype": "hero",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-national-day-card",
+      "en": "National-day card",
+      "ar": "بطاقة اليوم الوطني",
+      "category": "occasions",
+      "archetype": "hero",
+      "variant": 8,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-friday-card",
+      "en": "Friday card",
+      "ar": "بطاقة الجمعة",
+      "category": "occasions",
+      "archetype": "hero",
+      "variant": 9,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "occasions-hijri-date-card",
+      "en": "Hijri date card",
+      "ar": "بطاقة التاريخ الهجري",
+      "category": "occasions",
+      "archetype": "tri",
+      "variant": 10,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-current-activity",
+      "en": "Current activity",
+      "ar": "النشاط الحالي",
+      "category": "plan",
+      "archetype": "timeline",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-now-next-later",
+      "en": "Now · Next · Later",
+      "ar": "الآن · التالي · لاحقًا",
+      "category": "plan",
+      "archetype": "list",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-timeline-vertical",
+      "en": "Timeline vertical",
+      "ar": "خط زمني رأسي",
+      "category": "plan",
+      "archetype": "timeline",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-timeline-horizontal",
+      "en": "Timeline horizontal",
+      "ar": "خط زمني أفقي",
+      "category": "plan",
+      "archetype": "timeline",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-free-time-gauge",
+      "en": "Free-time gauge",
+      "ar": "مقياس الوقت الحر",
+      "category": "plan",
+      "archetype": "dial",
+      "variant": 4,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-day-progress-ring",
+      "en": "Day progress ring",
+      "ar": "حلقة تقدم اليوم",
+      "category": "plan",
+      "archetype": "ring",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-daily-brief",
+      "en": "Daily brief",
+      "ar": "موجز اليوم",
+      "category": "plan",
+      "archetype": "list",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-top-priorities",
+      "en": "Top priorities",
+      "ar": "أهم الأولويات",
+      "category": "plan",
+      "archetype": "checklist",
+      "variant": 7,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-focus-window",
+      "en": "Focus window",
+      "ar": "نافذة التركيز",
+      "category": "plan",
+      "archetype": "timeline",
+      "variant": 8,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-plan-board",
+      "en": "Plan board",
+      "ar": "لوحة الخطة",
+      "category": "plan",
+      "archetype": "kanban",
+      "variant": 9,
+      "interactive": false,
+      "forms": [
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-yesterday-today-tomorrow",
+      "en": "Yesterday · Today · Tomorrow",
+      "ar": "أمس · اليوم · غدًا",
+      "category": "plan",
+      "archetype": "week",
+      "variant": 10,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-schedule-health",
+      "en": "Schedule health",
+      "ar": "صحة الجدول",
+      "category": "plan",
+      "archetype": "ring",
+      "variant": 11,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "plan-routine-checklist",
+      "en": "Routine checklist",
+      "ar": "قائمة الروتين",
+      "category": "plan",
+      "archetype": "checklist",
+      "variant": 12,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-checklist",
+      "en": "Checklist",
+      "ar": "قائمة تحقق",
+      "category": "tasks",
+      "archetype": "checklist",
+      "variant": 0,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-task-rings",
+      "en": "Task rings",
+      "ar": "حلقات المهام",
+      "category": "tasks",
+      "archetype": "ring",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-eisenhower-matrix",
+      "en": "Eisenhower matrix",
+      "ar": "مصفوفة أيزنهاور",
+      "category": "tasks",
+      "archetype": "matrix",
+      "variant": 2,
+      "interactive": true,
+      "forms": [
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-kanban-strip",
+      "en": "Kanban strip",
+      "ar": "شريط كانبان",
+      "category": "tasks",
+      "archetype": "kanban",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-quick-add-bar",
+      "en": "Quick-add bar",
+      "ar": "شريط إضافة سريعة",
+      "category": "tasks",
+      "archetype": "quick",
+      "variant": 4,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-pinned-note-paper",
+      "en": "Pinned note paper",
+      "ar": "ورقة ملاحظة مثبتة",
+      "category": "tasks",
+      "archetype": "note",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "2x1",
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-sticky-note-stack",
+      "en": "Sticky-note stack",
+      "ar": "كومة ملاحظات لاصقة",
+      "category": "tasks",
+      "archetype": "note",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "2x1",
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-notes-grid",
+      "en": "Notes grid",
+      "ar": "شبكة الملاحظات",
+      "category": "tasks",
+      "archetype": "mosaic",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-handwritten-note",
+      "en": "Handwritten note",
+      "ar": "ملاحظة بخط اليد",
+      "category": "tasks",
+      "archetype": "note",
+      "variant": 8,
+      "interactive": false,
+      "forms": [
+        "2x1",
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-checklist-cards",
+      "en": "Checklist cards",
+      "ar": "بطاقات تحقق",
+      "category": "tasks",
+      "archetype": "checklist",
+      "variant": 9,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-overdue-list",
+      "en": "Overdue list",
+      "ar": "المتأخرات",
+      "category": "tasks",
+      "archetype": "list",
+      "variant": 10,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-subtasks-tree",
+      "en": "Subtasks tree",
+      "ar": "شجرة المهام الفرعية",
+      "category": "tasks",
+      "archetype": "list",
+      "variant": 11,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-shopping-list",
+      "en": "Shopping list",
+      "ar": "قائمة التسوق",
+      "category": "tasks",
+      "archetype": "checklist",
+      "variant": 12,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-voice-note-button",
+      "en": "Voice-note button",
+      "ar": "زر ملاحظة صوتية",
+      "category": "tasks",
+      "archetype": "quick",
+      "variant": 13,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "tasks-journal-prompt",
+      "en": "Journal prompt",
+      "ar": "سؤال اليوميات",
+      "category": "tasks",
+      "archetype": "note",
+      "variant": 14,
+      "interactive": false,
+      "forms": [
+        "2x1",
+        "2x2",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-habit-grid",
+      "en": "Habit grid",
+      "ar": "شبكة العادات",
+      "category": "habits",
+      "archetype": "heatmap",
+      "variant": 0,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-habit-heatmap",
+      "en": "Habit heatmap",
+      "ar": "خريطة العادات",
+      "category": "habits",
+      "archetype": "heatmap",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-streak-card",
+      "en": "Streak card",
+      "ar": "بطاقة السلسلة",
+      "category": "habits",
+      "archetype": "counter",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-water-drop",
+      "en": "Water drop",
+      "ar": "قطرة ماء",
+      "category": "habits",
+      "archetype": "drop",
+      "variant": 3,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-water-bottle",
+      "en": "Water bottle",
+      "ar": "زجاجة ماء",
+      "category": "habits",
+      "archetype": "drop",
+      "variant": 4,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-water-cups",
+      "en": "Water cups",
+      "ar": "أكواب الماء",
+      "category": "habits",
+      "archetype": "bars",
+      "variant": 5,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-sleep-dial",
+      "en": "Sleep dial",
+      "ar": "قرص النوم",
+      "category": "habits",
+      "archetype": "dial",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-bedtime-countdown",
+      "en": "Bedtime countdown",
+      "ar": "العد لوقت النوم",
+      "category": "habits",
+      "archetype": "countdown",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-workout-today",
+      "en": "Workout today",
+      "ar": "تمرين اليوم",
+      "category": "habits",
+      "archetype": "ring",
+      "variant": 8,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-workout-week",
+      "en": "Workout week",
+      "ar": "تمارين الأسبوع",
+      "category": "habits",
+      "archetype": "bars",
+      "variant": 9,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-medication-schedule",
+      "en": "Medication schedule",
+      "ar": "جدول الأدوية",
+      "category": "habits",
+      "archetype": "checklist",
+      "variant": 10,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "habits-mood-strip",
+      "en": "Mood strip",
+      "ar": "شريط المزاج",
+      "category": "habits",
+      "archetype": "mosaic",
+      "variant": 11,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-focus-timer-ring",
+      "en": "Focus timer ring",
+      "ar": "حلقة مؤقت التركيز",
+      "category": "focus",
+      "archetype": "ring",
+      "variant": 0,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-pomodoro-cycle",
+      "en": "Pomodoro cycle",
+      "ar": "دورة بومودورو",
+      "category": "focus",
+      "archetype": "dial",
+      "variant": 1,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-study-planner",
+      "en": "Study planner",
+      "ar": "مخطط الدراسة",
+      "category": "focus",
+      "archetype": "list",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-exam-countdown-stack",
+      "en": "Exam countdown stack",
+      "ar": "عد الامتحانات",
+      "category": "focus",
+      "archetype": "countdown",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-subject-progress",
+      "en": "Subject progress",
+      "ar": "تقدم المواد",
+      "category": "focus",
+      "archetype": "bars",
+      "variant": 4,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-deep-work-block",
+      "en": "Deep-work block",
+      "ar": "فترة عمل عميق",
+      "category": "focus",
+      "archetype": "timeline",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-break-reminder",
+      "en": "Break reminder",
+      "ar": "تذكير الاستراحة",
+      "category": "focus",
+      "archetype": "countdown",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "focus-study-streak",
+      "en": "Study streak",
+      "ar": "سلسلة الدراسة",
+      "category": "focus",
+      "archetype": "counter",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-daily-score-ring",
+      "en": "Daily score ring",
+      "ar": "حلقة نتيجة اليوم",
+      "category": "review",
+      "archetype": "ring",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-weekly-radar",
+      "en": "Weekly radar",
+      "ar": "رادار الأسبوع",
+      "category": "review",
+      "archetype": "radar",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-yearly-mosaic",
+      "en": "Yearly mosaic",
+      "ar": "فسيفساء السنة",
+      "category": "review",
+      "archetype": "mosaic",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-strengths-card",
+      "en": "Strengths card",
+      "ar": "بطاقة نقاط القوة",
+      "category": "review",
+      "archetype": "bars",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-what-you-did",
+      "en": "What you did",
+      "ar": "ماذا أنجزت",
+      "category": "review",
+      "archetype": "list",
+      "variant": 4,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-productivity-sparkline",
+      "en": "Productivity sparkline",
+      "ar": "خط الإنتاجية",
+      "category": "review",
+      "archetype": "spark",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-time-budget-donut",
+      "en": "Time-budget donut",
+      "ar": "دونات ميزانية الوقت",
+      "category": "review",
+      "archetype": "donut",
+      "variant": 6,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-consistency-calendar",
+      "en": "Consistency calendar",
+      "ar": "تقويم الاستمرارية",
+      "category": "review",
+      "archetype": "heatmap",
+      "variant": 7,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-trend-arrow",
+      "en": "Trend arrow",
+      "ar": "سهم الاتجاه",
+      "category": "review",
+      "archetype": "spark",
+      "variant": 8,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-milestone-card",
+      "en": "Milestone card",
+      "ar": "بطاقة الإنجاز",
+      "category": "review",
+      "archetype": "counter",
+      "variant": 9,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "review-personal-records",
+      "en": "Personal records",
+      "ar": "الأرقام الشخصية",
+      "category": "review",
+      "archetype": "bars",
+      "variant": 10,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "media-recent-audio",
+      "en": "Recent audio",
+      "ar": "أحدث الصوتيات",
+      "category": "media",
+      "archetype": "list",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "media-recent-video",
+      "en": "Recent video",
+      "ar": "أحدث الفيديو",
+      "category": "media",
+      "archetype": "mosaic",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "media-storage-usage",
+      "en": "Storage usage",
+      "ar": "استخدام التخزين",
+      "category": "media",
+      "archetype": "donut",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-battery-ring",
+      "en": "Battery ring",
+      "ar": "حلقة البطارية",
+      "category": "utility",
+      "archetype": "battery",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-battery-detail",
+      "en": "Battery detail",
+      "ar": "تفاصيل البطارية",
+      "category": "utility",
+      "archetype": "battery",
+      "variant": 1,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-quick-actions-grid",
+      "en": "Quick actions grid",
+      "ar": "شبكة الإجراءات السريعة",
+      "category": "utility",
+      "archetype": "quick",
+      "variant": 2,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-stopwatch",
+      "en": "Stopwatch",
+      "ar": "ساعة إيقاف",
+      "category": "utility",
+      "archetype": "digital",
+      "variant": 3,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-timer",
+      "en": "Timer",
+      "ar": "مؤقت",
+      "category": "utility",
+      "archetype": "ring",
+      "variant": 4,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-unit-tile",
+      "en": "Unit tile",
+      "ar": "بلاطة الوحدات",
+      "category": "utility",
+      "archetype": "quick",
+      "variant": 5,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-tasbih-counter",
+      "en": "Tasbih counter",
+      "ar": "عداد التسبيح",
+      "category": "utility",
+      "archetype": "counter",
+      "variant": 6,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-khatma-tracker",
+      "en": "Khatma tracker",
+      "ar": "متتبع الختمة",
+      "category": "utility",
+      "archetype": "bars",
+      "variant": 7,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-prayer-schedule",
+      "en": "Prayer schedule",
+      "ar": "جدول الصلوات",
+      "category": "utility",
+      "archetype": "prayer",
+      "variant": 8,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-qibla-compass",
+      "en": "Qibla compass",
+      "ar": "بوصلة القبلة",
+      "category": "utility",
+      "archetype": "compass",
+      "variant": 9,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-prayer-times-strip",
+      "en": "Prayer times strip",
+      "ar": "شريط مواقيت الصلاة",
+      "category": "utility",
+      "archetype": "prayer",
+      "variant": 10,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-next-prayer",
+      "en": "Next prayer",
+      "ar": "الصلاة القادمة",
+      "category": "utility",
+      "archetype": "nextprayer",
+      "variant": 11,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-prayer-times-ornate",
+      "en": "Prayer times (ornate)",
+      "ar": "المواقيت بالزخرفة",
+      "category": "utility",
+      "archetype": "prayer",
+      "variant": 12,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-next-prayer-ring",
+      "en": "Next prayer ring",
+      "ar": "حلقة الصلاة القادمة",
+      "category": "utility",
+      "archetype": "nextprayer",
+      "variant": 13,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-fajr-maghrib-card",
+      "en": "Fajr & Maghrib card",
+      "ar": "بطاقة الفجر والمغرب",
+      "category": "utility",
+      "archetype": "nextprayer",
+      "variant": 14,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-mosque-board",
+      "en": "Mosque board",
+      "ar": "لوحة المسجد",
+      "category": "utility",
+      "archetype": "prayer",
+      "variant": 15,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-adhkar-tasbih",
+      "en": "Adhkar & Tasbih",
+      "ar": "الأذكار والتسبيح",
+      "category": "utility",
+      "archetype": "counter",
+      "variant": 16,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-khatma-prayer",
+      "en": "Khatma + prayer",
+      "ar": "الختمة والصلاة",
+      "category": "utility",
+      "archetype": "bars",
+      "variant": 17,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-countdown",
+      "en": "Countdown",
+      "ar": "عد تنازلي",
+      "category": "utility",
+      "archetype": "countdown",
+      "variant": 18,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-anniversary-card",
+      "en": "Anniversary card",
+      "ar": "بطاقة الذكرى",
+      "category": "utility",
+      "archetype": "hero",
+      "variant": 19,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-date-calculator",
+      "en": "Date calculator",
+      "ar": "حاسبة التاريخ",
+      "category": "utility",
+      "archetype": "tri",
+      "variant": 20,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "utility-qr-quick-scan",
+      "en": "QR quick scan",
+      "ar": "مسح QR سريع",
+      "category": "utility",
+      "archetype": "quick",
+      "variant": 21,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "companion-companion-portrait",
+      "en": "Companion portrait",
+      "ar": "صورة الرفيق",
+      "category": "companion",
+      "archetype": "portrait",
+      "variant": 0,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "companion-companion-quick-actions",
+      "en": "Companion quick-actions",
+      "ar": "إجراءات الرفيق",
+      "category": "companion",
+      "archetype": "quick",
+      "variant": 1,
+      "interactive": true,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "companion-companion-mood",
+      "en": "Companion mood",
+      "ar": "مزاج الرفيق",
+      "category": "companion",
+      "archetype": "portrait",
+      "variant": 2,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    },
+    {
+      "id": "companion-companion-tip",
+      "en": "Companion tip",
+      "ar": "نصيحة الرفيق",
+      "category": "companion",
+      "archetype": "portrait",
+      "variant": 3,
+      "interactive": false,
+      "forms": [
+        "1x1",
+        "2x1",
+        "2x2",
+        "4x1",
+        "4x2",
+        "4x4"
+      ]
+    }
+  ]
+}

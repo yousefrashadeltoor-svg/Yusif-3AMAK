@@ -1,0 +1,16 @@
+{
+  "status": "validated",
+  "themeCount": 69,
+  "themeCategories": 10,
+  "sourceWidgetCount": 137,
+  "nativeWidgetCount": 137,
+  "removedDownloaderWidgets": [
+    "Active downloads",
+    "Download history",
+    "Paste-link tile"
+  ],
+  "widgetCategories": 12,
+  "widgetStyles": 10,
+  "widgetFonts": 6,
+  "note": "Catalog data is ported; native screens/widgets still require rendering implementation and device testing."
+}
