@@ -101,17 +101,4 @@ replace_once(p, old, new, "native direct-file format handling")
 replace_once(SRC / "lib/store.ts", "widgetFont: \"sans\", cityIndex: 0,", "widgetFont: \"sans\", cityIndex: 10,", "Giza default prayer location")
 
 
-# 6) Unbox Capacitor's nullable Double before passing overlay values to Java float extras.
-# Capacitor PluginCall#getDouble returns java.lang.Double, so primitive casts do not compile.
-plugin = ROOT / "android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java"
-plugin_text = plugin.read_text(encoding="utf-8")
-for field in ("size", "opacity"):
-    boxed = f'intent.putExtra("{field}", (float)call.getDouble("{field}", 1.0));'
-    unboxed = f'intent.putExtra("{field}", call.getDouble("{field}", 1.0).floatValue());'
-    if boxed in plugin_text:
-        plugin_text = plugin_text.replace(boxed, unboxed, 1)
-    elif unboxed not in plugin_text:
-        raise RuntimeError(f"Expected overlay setting conversion not found ({field}); refusing an unsafe Java patch.")
-plugin.write_text(plugin_text, encoding="utf-8")
-
 print("DAYFLOW feature patches applied: 12-hour clock, throttled companion rendering, native widget data sync, truthful direct-file format handling, and Giza default.")
