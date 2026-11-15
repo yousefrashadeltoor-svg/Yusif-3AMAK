@@ -252,8 +252,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          STASHED_NATIVE=false
+          if ! git diff --quiet -- android-native/native-source.zip.b64; then
+            git stash push -m "DAYFLOW sanitized native source archive" -- android-native/native-source.zip.b64
+            STASHED_NATIVE=true
+          fi
           git fetch origin repair/native-compose-only-gate
           git rebase origin/repair/native-compose-only-gate
+          if [[ "$STASHED_NATIVE" == "true" ]]; then
+            git stash pop
+          fi
           if [[ -f build-output/comprehensive-repository-audit-and-roadmap.zip ]]; then
             cp build-output/comprehensive-repository-audit-and-roadmap.zip comprehensive-repository-audit-and-roadmap.zip
             git add comprehensive-repository-audit-and-roadmap.zip
