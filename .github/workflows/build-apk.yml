@@ -7,6 +7,11 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: dayflow-native-compose-${{ github.ref }}
+  cancel-in-progress: true
+
+
 jobs:
   build-native-apk:
     runs-on: ubuntu-latest
@@ -170,9 +175,11 @@ jobs:
           python3 -m py_compile .github/scripts/remove-downloader-features.py
           if [[ -f extracted/src/screens/Downloads.tsx ]]; then
             python3 .github/scripts/remove-downloader-features.py --source-root extracted
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "Canonical source is already downloader-free; verifying its invariant set."
             ! grep -RniE 'DownloadManager|yt-dlp|gallery-dl|N_m3u8DL|aria2c|enqueueDownload|analyzeLink|startDownload|pauseDownload|cancelDownload|updateEngines|openSniffer|getPendingShare|#/downloads|"downloads"|Media Hub|Active downloads|Download history|Paste-link tile' extracted/src
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           fi
           test ! -e extracted/src/screens/Downloads.tsx
           test ! -e extracted/src/screens/MediaHub.tsx
@@ -219,7 +226,7 @@ jobs:
           echo "Vite source regression passed. This is not an Android APK and is not the Android UI release."
 
       - name: Package cleaned canonical DAYFLOW source
-        if: always() && steps.strip.outcome == 'success' && steps.vite.outcome == 'success'
+        if: always() && steps.strip.outputs.changed == 'true' && steps.vite.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
@@ -241,19 +248,24 @@ jobs:
           test -s build-output/comprehensive-repository-audit-and-roadmap.zip
 
       - name: Persist cleaned canonical DAYFLOW source on repair branch
-        if: always() && steps.strip.outcome == 'success' && steps.vite.outcome == 'success' && steps.native_clean.outcome == 'success'
+        if: always() && (steps.strip.outputs.changed == 'true' || steps.native_clean.outputs.changed == 'true') && steps.vite.outcome == 'success' && steps.native_clean.outcome == 'success'
         shell: bash
         run: |
           set -euo pipefail
-          cp build-output/comprehensive-repository-audit-and-roadmap.zip comprehensive-repository-audit-and-roadmap.zip
+          git fetch origin repair/native-compose-only-gate
+          git rebase origin/repair/native-compose-only-gate
+          if [[ -f build-output/comprehensive-repository-audit-and-roadmap.zip ]]; then
+            cp build-output/comprehensive-repository-audit-and-roadmap.zip comprehensive-repository-audit-and-roadmap.zip
+            git add comprehensive-repository-audit-and-roadmap.zip
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add comprehensive-repository-audit-and-roadmap.zip android-native/native-source.zip.b64
+          git add android-native/native-source.zip.b64
           if git diff --cached --quiet; then
-            echo "Canonical DAYFLOW source archive is already clean."
+            echo "Canonical source and native archive are already clean."
             exit 0
           fi
-          git commit -m "chore: remove downloader tools from canonical DAYFLOW source"
+          git commit -m "chore: remove downloader tools from DAYFLOW source and native bridge"
           git push origin "HEAD:repair/native-compose-only-gate"
 
       - name: Upload downloader-free DAYFLOW source snapshot
