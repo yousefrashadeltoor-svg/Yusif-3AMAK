@@ -145,32 +145,18 @@ export const fmtBytes = (b: number) => (b <= 0 ? "—" : b < 1e6 ? (b / 1e3).toF
     else:
         print("Generated Android bridge not present in the original source archive; native platform archive remains untouched for later Compose service migration.")
     # TypeScript side of the native bridge must no longer expose downloader methods.
+    # Source archive uses the formatted bridge layout; remove each downloader-only
+    # declaration/wrapper by property name, independent of whitespace formatting.
+    import re
     bridge = "src/lib/nativeBridge.ts"
     s = read(root, bridge)
-    for line in (
-        '  enqueueDownload(opts:{url:string;name:string;preset?:string}):Promise<{downloadId?:number;queued?:boolean}>;\n',
-        '  analyzeLink(opts:{url:string}):Promise<{json:string}>;\n',
-        '  startDownload(opts:{id:string;url:string;name:string;engines:string[];format:string;quality:string;saveDir:string;connections:number}):Promise<{downloadId?:number;queued?:boolean}>;\n',
-        '  pauseDownload(opts:{id:string}):Promise<void>; cancelDownload(opts:{id:string}):Promise<void>;\n',
-        '  updateEngines():Promise<{ytdlp:string}>; openSniffer(opts:{url:string}):Promise<void>;\n',
-        '  getPendingShare():Promise<{text:string}>; ',
-    ):
-        if line not in s:
-            raise RuntimeError(f"Native bridge downloader declaration missing: {line[:55]}")
-        s = s.replace(line, "", 1)
-    for line in (
-        '  enqueueDownload:(o:Parameters<DayflowNative["enqueueDownload"]>[0])=>call("enqueueDownload",o),\n',
-        '  analyzeLink:(o:Parameters<DayflowNative["analyzeLink"]>[0])=>call("analyzeLink",o),\n',
-        '  startDownload:(o:Parameters<DayflowNative["startDownload"]>[0])=>call("startDownload",o),\n',
-        '  pauseDownload:(o:Parameters<DayflowNative["pauseDownload"]>[0])=>call("pauseDownload",o),\n',
-        '  cancelDownload:(o:Parameters<DayflowNative["cancelDownload"]>[0])=>call("cancelDownload",o),\n',
-        '  updateEngines:()=>call("updateEngines"),\n',
-        '  openSniffer:(o:Parameters<DayflowNative["openSniffer"]>[0])=>call("openSniffer",o),\n',
-        '  getPendingShare:()=>call("getPendingShare"),\n',
-    ):
-        if line not in s:
-            raise RuntimeError(f"Native bridge downloader wrapper missing: {line[:55]}")
-        s = s.replace(line, "", 1)
+    names = ("enqueueDownload", "analyzeLink", "startDownload", "pauseDownload",
+             "cancelDownload", "updateEngines", "openSniffer", "getPendingShare")
+    for name in names:
+        pattern = re.compile(r"^\\s*" + re.escape(name) + r"\\s*(?:\\(|:).*?$", re.MULTILINE)
+        s, removed = pattern.subn("", s)
+        if removed < 1:
+            raise RuntimeError(f"Native bridge downloader declaration/wrapper missing: {name}")
     write(root, bridge, s)
 
     # Update native local-media widget text without removing audio/video/storage widgets.
