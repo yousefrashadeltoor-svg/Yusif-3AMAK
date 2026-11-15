@@ -157,6 +157,30 @@ jobs:
           flutter build apk --debug
           cp build/app/outputs/flutter-apk/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
 
+      - name: Extract repair scripts for source review
+        if: steps.inspect.outputs.kind == 'capacitor'
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 .github/scripts/extract-native-archives.py
+          test -s .github/scripts/patch-widget-flow.py
+          test -s .github/scripts/test_native_widget_repair.py
+          echo "Extracted widget patch and regression tests for source-level review."
+          sed -n '250,330p' .github/scripts/patch-widget-flow.py
+
+      - name: Preserve extracted repair scripts
+        if: always() && steps.inspect.outputs.kind == 'capacitor'
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAYFLOW-repair-script-inspection
+          path: |
+            .github/scripts/patch-widget-flow.py
+            .github/scripts/patch-native-reminders.py
+            .github/scripts/patch-native-runtime.py
+            .github/scripts/test_native_widget_repair.py
+          if-no-files-found: error
+          retention-days: 7
+
       - name: Build Capacitor Android project
         if: steps.inspect.outputs.kind == 'capacitor'
         shell: bash
