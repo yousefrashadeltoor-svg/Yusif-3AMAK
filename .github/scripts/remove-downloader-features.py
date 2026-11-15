@@ -159,15 +159,18 @@ export const fmtBytes = (b: number) => (b <= 0 ? "—" : b < 1e6 ? (b / 1e3).toF
             raise RuntimeError(f"Native bridge downloader declaration/wrapper missing: {name}")
     write(root, bridge, s)
 
-    # Update native local-media widget text without removing audio/video/storage widgets.
-    replace_once(root, "android/app/src/main/java/app/dayflow/android/DayflowWidgetProvider.java",
-        'body=ar?"افتح DAYFLOW لمتابعة ملفاتك وتنزيلاتك":"Open DAYFLOW to view media and downloads";',
-        'body=ar?"افتح DAYFLOW لمتابعة ملفاتك الصوتية والمرئية":"Open DAYFLOW to view your audio and video library";',
-        "remove downloader wording from launcher widget")
+    # Update generated native widget text only when this archive already contains it.
+    native_widget = "android/app/src/main/java/app/dayflow/android/DayflowWidgetProvider.java"
+    if (root / native_widget).exists():
+        replace_once(root, native_widget,
+            'body=ar?"افتح DAYFLOW لمتابعة ملفاتك وتنزيلاتك":"Open DAYFLOW to view media and downloads";',
+            'body=ar?"افتح DAYFLOW لمتابعة ملفاتك الصوتية والمرئية":"Open DAYFLOW to view your audio and video library";',
+            "remove downloader wording from launcher widget")
+        replace_once(root, native_widget, 'headline=ar?"مركز الوسائط":"Media Hub";', 'headline=ar?"مكتبة الوسائط":"Media library";', "rename retained native media-library widget")
+    else:
+        print("Generated Android widget provider is not part of the web source archive; native widget provider will be migrated separately to Compose.")
     replace_once(root, "src/lib/widgets.ts", '{ id: "media", en: "Media Hub", ar: "مركز الوسائط" }', '{ id: "media", en: "Media library", ar: "مكتبة الوسائط" }', "rename retained local-media widget category")
     replace_once(root, "src/lib/ai.ts", 'and a Media Hub that fetches public previews & direct files in browser (native yt-dlp/FFmpeg engine in the Android project).', 'and local media-library references for audio, video and storage summaries.', "remove downloader claims from AI context")
-    replace_once(root, "android/app/src/main/java/app/dayflow/android/DayflowWidgetProvider.java", 'headline=ar?"مركز الوسائط":"Media Hub";', 'headline=ar?"مكتبة الوسائط":"Media library";', "rename retained native media-library widget")
-
     # Delete downloader-only screens, engines and URL share plumbing. Generic fmtBytes survives above.
     for rel in ("src/screens/Downloads.tsx", "src/screens/MediaHub.tsx", "src/lib/downloads.ts", "src/lib/media.ts", "src/lib/share.ts"):
         remove_file(root, rel)
