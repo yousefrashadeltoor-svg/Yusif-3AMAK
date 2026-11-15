@@ -138,3 +138,13 @@ Repository: `yousefrashadeltoor-svg/Yusif-3AMAK`
 - [ ] Native debug/release Gradle build, APK integrity validation, emulator smoke tests and physical-device acceptance tests.
 
 The old P4 download/extractor roadmap has been replaced by the user's instruction to remove that entire product surface. Do not restore any download UI, engine, extractor, URL-sniffing or queue behavior in future migrations.
+
+
+### Follow-up — archived patcher cleanup (2026-11-15)
+
+- [x] Removed the obsolete downloader-specific `patch-app-features.py` build patcher.
+- [x] Removed the remaining downloader references from the packed widget patcher: `analyzeLink` was replaced as the pin-widget section boundary with the surviving notification-permission method, and “Media Hub” downloader wording was changed to local media-library wording.
+- [x] Repacked and persisted all six repair-script archive chunks to the repair branch.
+- [x] Verified all four retained patcher/test scripts and all native Java/XML archive files contain no downloader-specific API, engine, route or widget-label residue.
+- [x] Latest CI run `43704156182`: catalog export, source downloader removal, native ZIP sanitation, repair-script archive sanitation/inspection, and cleaned Vite regression passed.
+- [ ] Native Compose source/Gradle build, emulator tests and physical-device acceptance remain outstanding. The source gate correctly blocks Capacitor/WebView and no APK was produced.
