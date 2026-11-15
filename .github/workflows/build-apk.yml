@@ -202,6 +202,17 @@ jobs:
             --output build-output/native-source-sanitized.zip.b64
           test -s build-output/native-source-sanitized.zip.b64
 
+      - name: Inspect retained Android repair archive for downloader residue
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/inspect-native-repair-scripts.py
+          python3 .github/scripts/inspect-native-repair-scripts.py \
+            --repo-root "$GITHUB_WORKSPACE" \
+            --report build-output/native-repair-archive-audit.txt
+          test -s build-output/native-repair-archive-audit.txt
+
       - name: Set up Node for legacy source regression build
         if: always() && hashFiles('extracted/package-lock.json') != ''
         uses: actions/setup-node@v4
@@ -288,6 +299,7 @@ jobs:
             extracted/package-lock.json
             build-output/comprehensive-repository-audit-and-roadmap.zip
             build-output/native-source-sanitized.zip.b64
+            build-output/native-repair-archive-audit.txt
           if-no-files-found: ignore
           retention-days: 30
 
