@@ -40,8 +40,8 @@ def decode_zip(raw: bytes) -> bytes:
 
 def patch_plugin(source: str) -> tuple[str, bool]:
     changed = False
-    start_match = re.search(r"@PluginMethod\\s+public\\s+void\\s+analyzeLink\\s*\\(PluginCall\\s+call\\)\\s*\\{", source)
-    end_match = re.search(r"@PluginMethod\\s+public\\s+void\\s+requestNotificationsPermission\\s*\\(PluginCall\\s+call\\)\\s*\\{", source)
+    start_match = re.search(r"@PluginMethod\s+public\s+void\s+analyzeLink\s*\(PluginCall\s+call\)\s*\\{", source)
+    end_match = re.search(r"@PluginMethod\s+public\s+void\s+requestNotificationsPermission\s*\(PluginCall\s+call\)\s*\\{", source)
     if start_match:
         if not end_match or end_match.start() <= start_match.start():
             raise RuntimeError("Native bridge downloader block has no notification-permission boundary.")
