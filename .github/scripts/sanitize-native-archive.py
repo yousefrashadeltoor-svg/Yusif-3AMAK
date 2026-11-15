@@ -176,7 +176,7 @@ def main() -> None:
             raise RuntimeError(f"Downloader residue remains in native archive file: {name}")
     for required in ("AlarmScheduler.java", "AlarmReceiver.java", "BootReceiver.java",
                      "CompanionOverlayService.java", "DayflowWidgetProvider.java",
-                     "ReminderScheduler.java", "NativeNotifications.java"):
+                     "NativeNotifications.java"):
         if not any(name.endswith(required) for name in validate.namelist()):
             raise RuntimeError(f"Required native system component was lost: {required}")
 
@@ -185,7 +185,8 @@ def main() -> None:
     with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a", encoding="utf-8") as output:
         output.write(f"changed={'true' if changed else 'false'}\n")
     print("Native archive validated:", len(validate.namelist()), "entries; changed:", changed)
-    print("Preserved alarm, boot recovery, companion overlay, widgets, reminders and notifications.")
+    print("Preserved alarm, boot recovery, companion overlay, widgets and notifications.")
+    print("ReminderScheduler remains supplied by the separate retained reminder patch archive.")
     print("Downloader APIs, HTTP extraction helpers and downloader labels are absent.")
 
 if __name__ == "__main__":
