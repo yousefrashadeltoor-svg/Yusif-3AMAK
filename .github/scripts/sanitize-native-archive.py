@@ -40,8 +40,8 @@ def decode_zip(raw: bytes) -> bytes:
 
 def patch_plugin(source: str) -> tuple[str, bool]:
     changed = False
-    start_match = re.search(r"@PluginMethod\s+public\s+void\s+analyzeLink\s*\(PluginCall\s+call\)\s*\\{", source)
-    end_match = re.search(r"@PluginMethod\s+public\s+void\s+requestNotificationsPermission\s*\(PluginCall\s+call\)\s*\\{", source)
+    start_match = re.search(r"@PluginMethod\s+public\s+void\s+analyzeLink\s*\(PluginCall\s+call\)\s*\{", source)
+    end_match = re.search(r"@PluginMethod\s+public\s+void\s+requestNotificationsPermission\s*\(PluginCall\s+call\)\s*\{", source)
     if start_match:
         if not end_match or end_match.start() <= start_match.start():
             raise RuntimeError("Native bridge downloader block has no notification-permission boundary.")
@@ -49,7 +49,7 @@ def patch_plugin(source: str) -> tuple[str, bool]:
         changed = True
     elif "analyzeLink" in source or "directDownload(" in source or "DownloadManager" in source:
         raise RuntimeError("Native bridge contains download logic but its known method boundary changed.")
-    pending_pattern = re.compile(r"^\\s*@PluginMethod\\s+public\\s+void\\s+getPendingShare\\s*\\([^)]*\\)\\s*\\{[^}]*\\}\\s*", re.MULTILINE)
+    pending_pattern = re.compile(r"^\s*@PluginMethod\s+public\s+void\s+getPendingShare\s*\([^)]*\)\s*\{[^}]*\}\s*", re.MULTILINE)
     source, pending_removed = pending_pattern.subn("", source, count=1)
     if pending_removed:
         changed = True
@@ -75,7 +75,7 @@ def patch_plugin(source: str) -> tuple[str, bool]:
 
 def patch_widget(source: str) -> tuple[str, bool]:
     changed = False
-    pattern = re.compile(r'else\\s+if\\s*\\("media"\\.equals\\(cat\\)\\)\\s*\\{[^}]*\\}')
+    pattern = re.compile(r'else\s+if\s*\("media"\.equals\(cat\)\)\s*\{[^}]*\}')
     new = 'else if("media".equals(cat)){headline=ar?"مكتبة الوسائط":"Media library";body=ar?"افتح DAYFLOW لعرض ملفاتك الصوتية والمرئية":"Open DAYFLOW to view your audio and video library";footer="";}'
     source, removed = pattern.subn(new, source, count=1)
     if removed:
