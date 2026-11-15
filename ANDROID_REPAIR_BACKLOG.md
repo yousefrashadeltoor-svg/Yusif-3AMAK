@@ -1,6 +1,6 @@
 # DAYFLOW Android Repair Backlog
 
-Updated: 2026-11-13
+Updated: 2026-11-15
 Repository: `yousefrashadeltoor-svg/Yusif-3AMAK`
 
 ## Verified current state
@@ -56,16 +56,16 @@ Repository: `yousefrashadeltoor-svg/Yusif-3AMAK`
 - [ ] Update widget content from real app state and provide explicit refresh/update handling.
 - [ ] Do not advertise a design or size as available until its native layout exists and has passed launcher testing.
 
-### P4 — Link preview, media metadata, and downloads
+### P4 — Downloader removal (user-requested scope)
 
-- [ ] Remove browser CORS-dependent page scraping from Android link analysis.
-- [ ] Fetch page metadata natively and display only verified title, thumbnail/cover, author, description, duration, filename, MIME type, and file size.
-- [ ] Support common Open Graph and site metadata, with robust timeouts, redirects, charset handling, and clear unsupported-page errors.
-- [ ] Use Android DownloadManager for actual direct-file URLs and show real progress, pause/resume/cancel support where available, and final destination.
-- [ ] Integrate a maintained Android-compatible media extractor for supported video/social sites; do not invent formats, resolutions, or sizes.
-- [ ] Detect and explain unsupported sites, login requirements, DRM, expired URLs, and unavailable extractors.
-- [ ] Ensure choosing a format starts the real native download rather than a browser request or simulated progress.
-- [ ] Persist download state across app restarts and handle Android storage/media permissions correctly.
+- [x] Remove the Downloads and Media Hub routes, screens, navigation entries, paste-link actions, downloader queue/history/progress UI, clipboard URL detection and downloader-only assistant actions.
+- [x] Remove downloader engines, media extractors, URL sniffing, page-analysis/download functions, downloader-only persisted state, native bridge calls and download-specific widget definitions.
+- [x] Remove downloader-specific methods and imports from the retained Android native-source archive, including link analysis, enqueue/start/pause/cancel, engine update, sniffer and shared-URL handoff.
+- [x] Remove download wording from the retained native media widget while preserving the non-downloader audio/video/storage widget records.
+- [x] Preserve generic file formatting, QR output, image/file export, backup, local file references and existing saved alarm sound URIs; migrate legacy downloaded alarm-sound source tags to local-file references instead of deleting the URI.
+- [x] Verify source scans contain no downloader-specific routes, engines, native methods, labels or downloader widget records; cleaned Vite build passes.
+- [ ] Re-run the downloader-removal invariant scan against the final merged native Compose app after the full UI migration.
+
 
 ### P5 — Notifications and Android permissions
 
@@ -110,3 +110,31 @@ Repository: `yousefrashadeltoor-svg/Yusif-3AMAK`
 - Do not substitute mock data, simulated download formats, fake alarms, or preview-only widgets for real Android functionality.
 - Do not mark a feature complete based solely on a successful APK build.
 - Do not remove the existing app until the replacement has passed visual and functional regression tests.
+
+
+---
+
+## Execution update — 2026-11-15
+
+### Verified and persisted on `repair/native-compose-only-gate`
+
+- The canonical source archive has been cleaned and persisted on the repair branch. The active app source no longer contains the Downloads/Media Hub screens, downloader engine modules, downloader share handoff or downloader-specific navigation/state.
+- The separate Android native archive has also been sanitized and persisted. Its downloader APIs and link-analysis helpers are removed; alarm, device-tone, boot receiver, overlay service, widget provider and notification components remain.
+- The shared `fmtBytes` helper was moved to `src/lib/format.ts` so unrelated file/QR/image-export UI keeps working.
+- Existing user alarm sound URIs are preserved through the store migration; their old downloader source label maps to the local-file source.
+- The source catalogs were exported from the original DAYFLOW definitions: 69 themes and 137 retained widget definitions. The 3 removed widget definitions are downloader-only. Exporting catalog data does not mean native Compose previews or 137 launcher widgets are already implemented.
+- GitHub Actions run `43703428485` passed catalog validation, downloader-removal validation, native archive sanitization, and the cleaned Vite source build. Its overall conclusion remains failure because the Compose architecture gate correctly blocks the existing Capacitor/WebView source. Native Gradle build and APK upload were skipped.
+- No emulator or physical-device test has been performed. No APK is available for installation.
+
+### Still outstanding
+
+- [ ] Full native Kotlin/Jetpack Compose implementation of every existing DAYFLOW screen and interaction, matching the current UI and preserving data/business logic.
+- [ ] Complete native theme system and real previews for all 69 source themes.
+- [ ] Native launcher widget layouts, per-widget configuration, real state updates and launcher verification for all 137 retained designs.
+- [ ] Alarm, sound URI permission persistence, reboot/time/time-zone restore, notification channels/actions and reminder runtime verification.
+- [ ] System-level floating companion overlay with the current robot appearance and all current controls.
+- [ ] Prayer-time tests for Giza, Qalyub and Benha against a trusted Egyptian timetable and correct civil time-zone/DST handling.
+- [ ] Arabic RTL/English LTR screenshot regression, process/lifecycle tests, low-memory and weak-network stability tests.
+- [ ] Native debug/release Gradle build, APK integrity validation, emulator smoke tests and physical-device acceptance tests.
+
+The old P4 download/extractor roadmap has been replaced by the user's instruction to remove that entire product surface. Do not restore any download UI, engine, extractor, URL-sniffing or queue behavior in future migrations.
