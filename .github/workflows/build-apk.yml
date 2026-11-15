@@ -147,6 +147,29 @@ jobs:
           print("Verified native APK archive:", apk_path, "bytes:", apk_path.stat().st_size)
           PY
 
+
+      # Run the product-data port even when the native Compose gate blocks this
+      # source archive. This gives a verified migration artifact without ever
+      # producing or publishing a WebView APK.
+      - name: Extract and validate DAYFLOW native catalogs
+        if: always() && hashFiles('extracted/src/lib/themes.ts', 'extracted/src/lib/widgets.ts') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/port-native-catalogs.py
+          python3 .github/scripts/port-native-catalogs.py \
+            --source-lib extracted/src/lib \
+            --output build-output/native-catalogs
+
+      - name: Upload native catalog migration artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAYFLOW-native-catalogs
+          path: build-output/native-catalogs/
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Upload verified native APK
         uses: actions/upload-artifact@v4
         with:
