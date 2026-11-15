@@ -57,8 +57,8 @@ def extract_widgets(lib: Path) -> dict:
         if category:
             raw.extend((category, en, ar, archetype, int(interactive))
                        for en, ar, archetype, interactive in pattern.findall(line))
-    if len(raw) != 140:
-        raise ValueError(f"Widget source count changed: expected 140, found {len(raw)}")
+    if len(raw) not in (137, 140):
+        raise ValueError(f"Widget source count changed: expected 140 before downloader removal or 137 after it, found {len(raw)}")
     widgets = []
     for category, en, ar, archetype, interactive in raw:
         if en in REMOVED_WIDGETS:
