@@ -170,6 +170,19 @@ def extract_repair_scripts() -> None:
             raise SystemExit(f"{script_name}: expected native sync patch block was not found; refusing an unsafe archive rewrite.")
         found[script_name] = script_text.encode("utf-8")
 
+    # The overlay patcher generates the Java method after patch-app-features.py
+    # has run. Correct the generated source template here so the native plugin
+    # explicitly unboxes Capacitor's Double before placing a float extra.
+    runtime = found["patch-native-runtime.py"].decode("utf-8")
+    for field in ("size", "opacity"):
+        invalid = f'intent.putExtra("{field}", (float)call.getDouble("{field}", 1.0));'
+        valid = f'intent.putExtra("{field}", call.getDouble("{field}", 1.0).floatValue());'
+        if invalid in runtime:
+            runtime = runtime.replace(invalid, valid, 1)
+        elif valid not in runtime:
+            raise SystemExit(f"patch-native-runtime.py: expected {field} overlay extra was not found; refusing an unsafe archive rewrite.")
+    found["patch-native-runtime.py"] = runtime.encode("utf-8")
+
     SCRIPTS.mkdir(parents=True, exist_ok=True)
     for name, source in found.items():
         if not source.strip():
