@@ -75,3 +75,63 @@ Audit commit: `306dadce271178c253e7f0ccf4d4558281a8d328`
 - Android system behavior must be implemented natively; the web layer remains the presentation/UI layer.
 - No false “Android ready” labels or fake format/metadata results.
 - CI build success is not proof of real-device behavior. Alarm, overlay, widget, notifications and download behavior require Android emulator/device validation.
+
+
+---
+
+## Execution update — 2026-11-15
+
+This section supersedes any older assumptions above where the separate Android source archive was not yet inventoried, and records only results verified in the repair branch.
+
+### Current architecture gate
+
+- The canonical DAYFLOW source is still React/Vite/TypeScript with `capacitor.config.ts`; it is not a Kotlin/Jetpack Compose application.
+- The previous successful Android build (run `43700009720`) compiled the Capacitor project and therefore produced a WebView-based application. It is explicitly disqualified under the new product requirement.
+- `.github/workflows/build-apk.yml` now refuses to build or upload an APK unless the source contains a native `ComponentActivity` launcher using Compose `setContent`, Compose Gradle configuration, and no primary WebView/Capacitor shell.
+- The current gate is expected to stop at source inspection. This is not an Android build failure after Gradle; Gradle is intentionally not run and no APK is created.
+
+### Completed source cleanup
+
+- Removed the downloader product surface from the DAYFLOW source: Downloads and Media Hub screens, route and navigation entry, downloader engine/planner code, downloader-only state, clipboard URL detection, URL/share-to-download handoff, downloader-only assistant routes, and three downloader-specific widget definitions.
+- Removed downloader-specific bridge API members, URL-analysis helpers, direct-download methods and downloader wording from the retained Android native-source archive.
+- Removed the downloader-only alarm sound picker choice while preserving user-owned legacy alarm sound references by migrating their source marker from `downloaded` to `files`; the alarm's saved URI is not discarded.
+- Moved the shared byte-formatting helper to `src/lib/format.ts` so QR, image/file export, and other non-downloader tools keep their shared formatting behavior.
+- Preserved unrelated task, calendar, habit, alarm, prayer, AI, QR/share, image editing/export, theme, widget, companion, and local media-library code.
+- Added static invariant checks over the extracted source and native archive; those checks reject downloader-specific APIs, engine names, routes, labels and widget definitions.
+
+### Catalog inventory and output
+
+- The original DAYFLOW theme data contains 69 theme packs. The native catalog exporter writes the source values, bilingual labels, tokens, materials, shapes, font and motion metadata rather than inventing sample themes.
+- The original widget catalog contains 140 definitions. Exactly three downloader-only definitions are excluded; 137 non-downloader definitions remain, across 12 categories, 10 styles and 6 widget font options.
+- Catalog data export is not the same as native Compose rendering. The 69 theme previews and 137 launcher widget renderers have not yet been ported to Compose or individually tested.
+
+### Verified CI results
+
+For run `43703428485`:
+
+- Native Compose source gate: **blocked as expected** because the archived project is still Capacitor/WebView.
+- Theme/widget catalog extraction and validation: **passed**.
+- Downloader removal and source invariant scan: **passed**.
+- Native source archive sanitization and preservation checks: **passed**.
+- Cleaned source Vite regression build: **passed**. This validates the remaining TypeScript/Vite source only; it is not an Android build.
+- Cleaned source and catalog artifacts: **uploaded**.
+- Native Compose Gradle build, APK validation, emulator install and physical-device tests: **not run**. No APK was built or published in this run.
+
+Repair branch: `repair/native-compose-only-gate`  
+Latest verified branch commit after persisting the cleaned source and native archive: `6ee83bb573d44ece71d7283b8c26a30b24d35575`.
+
+### Remaining work
+
+1. Build the complete native Kotlin/Jetpack Compose DAYFLOW UI from the existing DAYFLOW source of truth. Port every screen, dialog, navigation path, visual state, Arabic RTL/English LTR behavior, settings, persistence and business rule. Do not replace it with a simplified dashboard or a Capacitor wrapper.
+2. Port all 69 theme definitions and theme preview/apply behavior into the Compose theme system. Preserve user theme selection, custom themes and all existing appearance options.
+3. Implement real native launcher widget layouts and per-widget configuration for the 137 retained designs, or limit advertised native options to those actually implemented and tested. Do not claim the entire catalog is native merely because its data is exported.
+4. Port alarm scheduling, saved device-tone URIs, permission recovery, reboot/time/time-zone restoration, continuous ringing, snooze and reminder actions into the native app. Existing archived Java components are reference implementations, not proof of runtime behavior.
+5. Port the floating companion into a real system overlay/foreground service while preserving its existing appearance, controls and lifecycle behavior.
+6. Implement notification permission/channels/actions and verify background delivery.
+7. Validate Giza, Qalyub and Benha prayer calculations against the chosen Egyptian authority/method for multiple dates, using IANA time-zone data and appropriate local civil time. The previous city-offset patches are not an authoritative validation.
+8. Run full native Gradle build, lint and unit tests; then emulator and physical-device tests for alarms, boot recovery, overlay, widgets, notifications, RTL/LTR, low-memory behavior and data persistence.
+9. Add screenshot-based visual regression against the original DAYFLOW screens before switching the launcher to Compose.
+
+### Scope correction
+
+The earlier audit's download/extractor implementation plan is superseded by the user's explicit instruction to remove downloader tools entirely. No downloader, URL extractor, download queue, download engine, or media-sniffing replacement is in scope. Generic file export, backup, QR output, and local file references remain in scope where they are not part of the removed downloader product.
