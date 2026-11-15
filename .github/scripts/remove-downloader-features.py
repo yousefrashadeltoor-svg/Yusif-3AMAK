@@ -153,7 +153,7 @@ export const fmtBytes = (b: number) => (b <= 0 ? "—" : b < 1e6 ? (b / 1e3).toF
     names = ("enqueueDownload", "analyzeLink", "startDownload", "pauseDownload",
              "cancelDownload", "updateEngines", "openSniffer", "getPendingShare")
     for name in names:
-        pattern = re.compile(r"^\\s*" + re.escape(name) + r"\\s*(?:\\(|:).*?$", re.MULTILINE)
+        pattern = re.compile(r"^\s*" + re.escape(name) + r"\s*(?:\(|:).*?$", re.MULTILINE)
         s, removed = pattern.subn("", s)
         if removed < 1:
             raise RuntimeError(f"Native bridge downloader declaration/wrapper missing: {name}")
