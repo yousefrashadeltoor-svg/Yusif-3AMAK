@@ -390,12 +390,30 @@ jobs:
           if "DayflowWidgetProvider" not in s: s=s.replace("</application>",components+chr(10)+"</application>")
           manifest.write_text(s)
           activity=Path("android/app/src/main/java/app/dayflow/android/MainActivity.java")
-          if activity.exists():
-            a=activity.read_text()
-            if "registerPlugin(DayflowBridgePlugin.class)" not in a:
-              a=a.replace("super.onCreate(savedInstanceState);","registerPlugin(DayflowBridgePlugin.class);" + chr(10) + "        super.onCreate(savedInstanceState);")
-              activity.write_text(a)
-          else: raise SystemExit("Capacitor MainActivity.java not found; native plugin registration was not applied")
+          if not activity.exists():
+              raise SystemExit("Capacitor MainActivity.java not found; native plugin registration was not applied")
+          a=activity.read_text()
+          if "import android.os.Bundle;" not in a:
+              import_marker="import android.content.Intent;"
+              if import_marker in a:
+                  a=a.replace(import_marker, import_marker + chr(10) + "import android.os.Bundle;", 1)
+              else:
+                  a=a.replace("package app.dayflow.android;", "package app.dayflow.android;" + chr(10) + "import android.os.Bundle;", 1)
+          if "registerPlugin(DayflowBridgePlugin.class)" not in a:
+              class_marker="public class MainActivity extends BridgeActivity {"
+              if class_marker not in a:
+                  raise SystemExit("Unexpected Capacitor MainActivity shape; cannot safely register DayflowBridge")
+              if "onCreate(Bundle savedInstanceState)" in a:
+                  if "super.onCreate(savedInstanceState);" not in a:
+                      raise SystemExit("Existing MainActivity.onCreate has no super call; refusing unsafe plugin registration")
+                  a=a.replace("super.onCreate(savedInstanceState);", "registerPlugin(DayflowBridgePlugin.class);" + chr(10) + "        super.onCreate(savedInstanceState);", 1)
+              else:
+                  method="    @Override public void onCreate(Bundle savedInstanceState) {" + chr(10) + "        registerPlugin(DayflowBridgePlugin.class);" + chr(10) + "        super.onCreate(savedInstanceState);" + chr(10) + "    }"
+                  a=a.replace(class_marker, class_marker + chr(10) + method, 1)
+          if a.count("registerPlugin(DayflowBridgePlugin.class)") != 1 or "onCreate(Bundle savedInstanceState)" not in a:
+              raise SystemExit("DAYFLOW native bridge registration postcondition failed")
+          activity.write_text(a)
+          print("Registered DAYFLOW Capacitor native bridge in MainActivity.")
           PY
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
           python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
