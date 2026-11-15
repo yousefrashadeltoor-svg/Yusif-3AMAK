@@ -81,6 +81,8 @@ def main() -> None:
 
     found = {}
     forbidden_hits = []
+    extracted_dir = args.report.parent / "native-repair-scripts-review"
+    extracted_dir.mkdir(parents=True, exist_ok=True)
     with tarfile.open(fileobj=io.BytesIO(payload), mode="r:") as archive:
         for member in archive.getmembers():
             if not member.isfile():
@@ -91,12 +93,14 @@ def main() -> None:
                 raise RuntimeError(f"Cannot read archive member {member.name}")
             data = stream.read()
             if name.endswith(".py"):
+                (extracted_dir / name).write_bytes(data)
                 text = data.decode("utf-8", errors="strict")
                 if name in EXPECTED:
                     found[name] = hashlib.sha256(data).hexdigest()
-                for token in FORBIDDEN:
-                    if token.casefold() in text.casefold():
-                        forbidden_hits.append((member.name, token))
+                for line_number, line in enumerate(text.splitlines(), 1):
+                    for token in FORBIDDEN:
+                        if token.casefold() in line.casefold():
+                            forbidden_hits.append((member.name, line_number, token, line.strip()[:240]))
     missing = EXPECTED - found.keys()
     if missing:
         raise RuntimeError("Retained Android patch archive is missing: " + ", ".join(sorted(missing)))
