@@ -2,6 +2,8 @@ name: Validate Android build workflow syntax
 
 on:
   push:
+    branches: [main, repair/widget-native-state-bridge]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 
@@ -13,13 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Parse workflow YAML
+      - name: Parse workflow YAML and verify its execution graph
         shell: bash
         run: |
           ruby - <<'RUBY'
           require "yaml"
-          data = YAML.load_file(".github/workflows/build-apk.yml")
+          workflow_path = ".github/workflows/build-apk.yml"
+          data = YAML.load_file(workflow_path)
           puts "Root keys: #{data.keys.inspect}"
+          triggers = data["on"] || data[true]
+          abort "Workflow triggers are missing or invalid" unless triggers.is_a?(Hash)
+          abort "Push trigger is missing" unless triggers.key?("push")
           jobs = data["jobs"]
           puts "Jobs: #{jobs&.keys&.inspect}"
           abort "GitHub Actions jobs map is missing or empty" unless jobs.is_a?(Hash) && !jobs.empty?
@@ -29,7 +35,7 @@ jobs:
           steps = job["steps"]
           abort "build-apk steps must be a non-empty array" unless steps.is_a?(Array) && !steps.empty?
           puts "Top name: #{data['name'].inspect}"
-          puts "on key: #{data[true].inspect}"
+          puts "Trigger keys: #{triggers.keys.inspect}"
           puts "Steps count: #{steps.length}"
           steps.each_with_index do |step, index|
             abort "Step #{index + 1} is not a mapping" unless step.is_a?(Hash)
