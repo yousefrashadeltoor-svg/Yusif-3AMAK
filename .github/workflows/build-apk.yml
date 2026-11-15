@@ -161,6 +161,52 @@ jobs:
             --source-lib extracted/src/lib \
             --output build-output/native-catalogs
 
+      - name: Remove downloader product from DAYFLOW source
+        if: always() && hashFiles('extracted/src/App.tsx') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m py_compile .github/scripts/remove-downloader-features.py
+          python3 .github/scripts/remove-downloader-features.py --source-root extracted
+          test ! -e extracted/src/screens/Downloads.tsx
+          test ! -e extracted/src/screens/MediaHub.tsx
+          test ! -e extracted/src/lib/downloads.ts
+          test ! -e extracted/src/lib/media.ts
+          test ! -e extracted/src/lib/share.ts
+          test -s extracted/src/lib/format.ts
+          ! grep -RniE 'DownloadManager|yt-dlp|gallery-dl|N_m3u8DL|aria2c|enqueueDownload|startDownload|openSniffer|#/downloads|Media Hub' extracted/src extracted/android/app/src/main
+          echo "Downloader removal and source invariant checks passed."
+
+      - name: Set up Node for legacy source regression build
+        if: always() && hashFiles('extracted/package-lock.json') != ''
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Build cleaned DAYFLOW web source for migration regression only
+        if: always() && hashFiles('extracted/package-lock.json') != ''
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd extracted
+          npm ci
+          npm run build
+          test -s dist/index.html
+          echo "Vite source regression passed. This is not an Android APK and is not the Android UI release."
+
+      - name: Upload downloader-free DAYFLOW source snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAYFLOW-downloader-free-source
+          path: |
+            extracted/src/**
+            extracted/android/app/src/main/**
+            extracted/package.json
+            extracted/package-lock.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Upload native catalog migration artifact
         if: always()
         uses: actions/upload-artifact@v4
