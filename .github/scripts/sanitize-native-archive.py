@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import base64
 import io
+import os
 import re
 import zipfile
 from pathlib import Path
@@ -178,6 +179,8 @@ def main() -> None:
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(archive_path.read_bytes())
+    with open(os.environ.get("GITHUB_OUTPUT", "/dev/null"), "a", encoding="utf-8") as output:
+        output.write(f"changed={'true' if changed else 'false'}\\n")
     print("Native archive validated:", len(validate.namelist()), "entries; changed:", changed)
     print("Preserved alarm, boot recovery, companion overlay, widgets, reminders and notifications.")
     print("Downloader APIs, HTTP extraction helpers and downloader labels are absent.")
