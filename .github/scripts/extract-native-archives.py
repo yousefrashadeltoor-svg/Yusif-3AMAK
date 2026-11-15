@@ -137,7 +137,7 @@ def extract_repair_scripts() -> None:
             )
             p = p[:sync_start] + sync_method + p[sync_end:]
 """
-    reminder_legacy = '    p = replace_once(p, old_sync, new_sync, "app state to native reminder scheduler")\\n'
+    reminder_legacy = '    p = replace_once(p, old_sync, new_sync, "app state to native reminder scheduler")\n'
     reminder_safe = """    signature = '@PluginMethod public void syncState(PluginCall call) {'
     sync_start = p.find(signature)
     sync_end = p.find('\\n    }', sync_start) if sync_start >= 0 else -1
