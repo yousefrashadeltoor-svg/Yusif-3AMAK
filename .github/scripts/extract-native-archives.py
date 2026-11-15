@@ -107,6 +107,69 @@ def extract_repair_scripts() -> None:
     missing = required - found.keys()
     if missing:
         raise SystemExit("Repair archive is missing: " + ", ".join(sorted(missing)))
+    # The packed patchers are applied in sequence, then tested again against the
+    # resulting combined source tree. Keep each integration idempotent when a
+    # later patcher has already appended its own sync hook.
+    widget_legacy = """    if new_sync not in p:
+        matched = next((old for old in old_sync_variants if old in p), None)
+        if matched is None: raise RuntimeError("Native widget sync method changed; refusing to overwrite unknown plugin behavior")
+        p = p.replace(matched, new_sync, 1)
+"""
+    widget_safe = """    signature = '@PluginMethod public void syncState(PluginCall call) {'
+    sync_start = p.find(signature)
+    sync_end = p.find('\\\\n    }', sync_start) if sync_start >= 0 else -1
+    if sync_start < 0 or sync_end < 0:
+        raise RuntimeError("Native syncState method was not found; refusing to alter unknown plugin behavior")
+    sync_method = p[sync_start:sync_end]
+    widget_refresh = 'DayflowWidgetProvider.refreshAll(getContext());'
+    if widget_refresh not in sync_method:
+        matched = next((old for old in old_sync_variants if old in p), None)
+        if matched is not None:
+            p = p.replace(matched, new_sync, 1)
+        else:
+            resolve_marker = '        call.resolve();'
+            if resolve_marker not in sync_method:
+                raise RuntimeError("Native syncState method has no expected resolve point; refusing to alter unknown plugin behavior")
+            sync_method = sync_method.replace(
+                resolve_marker,
+                '        ' + widget_refresh + "\\\\n" + resolve_marker,
+                1,
+            )
+            p = p[:sync_start] + sync_method + p[sync_end:]
+"""
+    reminder_legacy = '    p = replace_once(p, old_sync, new_sync, "app state to native reminder scheduler")\n'
+    reminder_safe = """    signature = '@PluginMethod public void syncState(PluginCall call) {'
+    sync_start = p.find(signature)
+    sync_end = p.find('\\\\n    }', sync_start) if sync_start >= 0 else -1
+    if sync_start < 0 or sync_end < 0:
+        raise RuntimeError("Native syncState method was not found; refusing to alter unknown plugin behavior")
+    sync_method = p[sync_start:sync_end]
+    reminder_sync = 'ReminderScheduler.syncFromState(getContext(), json);'
+    if reminder_sync not in sync_method:
+        if old_sync in p:
+            p = p.replace(old_sync, new_sync, 1)
+        else:
+            resolve_marker = '        call.resolve();'
+            if resolve_marker not in sync_method:
+                raise RuntimeError("Native syncState method has no expected resolve point; refusing to alter unknown plugin behavior")
+            sync_method = sync_method.replace(
+                resolve_marker,
+                '        ' + reminder_sync + "\\\\n" + resolve_marker,
+                1,
+            )
+            p = p[:sync_start] + sync_method + p[sync_end:]
+"""
+    for script_name, old_block, new_block in (
+        ("patch-widget-flow.py", widget_legacy, widget_safe),
+        ("patch-native-reminders.py", reminder_legacy, reminder_safe),
+    ):
+        script_text = found[script_name].decode("utf-8")
+        if old_block in script_text:
+            script_text = script_text.replace(old_block, new_block, 1)
+        elif new_block not in script_text:
+            raise SystemExit(f"{script_name}: expected native sync patch block was not found; refusing an unsafe archive rewrite.")
+        found[script_name] = script_text.encode("utf-8")
+
     SCRIPTS.mkdir(parents=True, exist_ok=True)
     for name, source in found.items():
         if not source.strip():
