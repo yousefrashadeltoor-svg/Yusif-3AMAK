@@ -49,11 +49,12 @@ def patch_plugin(source: str) -> tuple[str, bool]:
         changed = True
     elif "analyzeLink" in source or "directDownload(" in source or "DownloadManager" in source:
         raise RuntimeError("Native bridge contains download logic but its known method boundary changed.")
-    if GET_PENDING_SHARE in source:
-        source = source.replace(GET_PENDING_SHARE, "", 1)
+    pending_pattern = re.compile(r"^\\s*@PluginMethod\\s+public\\s+void\\s+getPendingShare\\s*\\([^)]*\\)\\s*\\{[^}]*\\}\\s*", re.MULTILINE)
+    source, pending_removed = pending_pattern.subn("", source, count=1)
+    if pending_removed:
         changed = True
     elif "getPendingShare" in source:
-        raise RuntimeError("Native bridge contains shared-URL handoff but its exact method boundary changed.")
+        raise RuntimeError("Native bridge contains shared-URL handoff but its method boundary changed.")
 
     for imp in REMOVE_IMPORTS:
         if imp in source:
@@ -74,10 +75,10 @@ def patch_plugin(source: str) -> tuple[str, bool]:
 
 def patch_widget(source: str) -> tuple[str, bool]:
     changed = False
-    old = 'else if("media".equals(cat)){headline=ar?"مركز الوسائط":"Media Hub";body=ar?"افتح DAYFLOW لمتابعة ملفاتك وتنزيلاتك":"Open DAYFLOW to view media and downloads";footer="";}'
+    pattern = re.compile(r'else\\s+if\\s*\\("media"\\.equals\\(cat\\)\\)\\s*\\{[^}]*\\}')
     new = 'else if("media".equals(cat)){headline=ar?"مكتبة الوسائط":"Media library";body=ar?"افتح DAYFLOW لعرض ملفاتك الصوتية والمرئية":"Open DAYFLOW to view your audio and video library";footer="";}'
-    if old in source:
-        source = source.replace(old, new, 1)
+    source, removed = pattern.subn(new, source, count=1)
+    if removed:
         changed = True
     elif "Media Hub" in source or "downloads" in source.lower() or "تنزيلاتك" in source:
         raise RuntimeError("Native widget media label changed; refusing an unsafe replacement.")
