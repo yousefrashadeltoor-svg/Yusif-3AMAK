@@ -135,3 +135,14 @@ Latest verified branch commit after persisting the cleaned source and native arc
 ### Scope correction
 
 The earlier audit's download/extractor implementation plan is superseded by the user's explicit instruction to remove downloader tools entirely. No downloader, URL extractor, download queue, download engine, or media-sniffing replacement is in scope. Generic file export, backup, QR output, and local file references remain in scope where they are not part of the removed downloader product.
+
+
+## Follow-up archive cleanup — 2026-11-15
+
+- Removed the obsolete `.github/scripts/patch-app-features.py`, which still contained a direct-download patch targeting the deleted `downloads.ts` module.
+- Sanitized the retained six-part `android-native/repair-scripts-v2.part*.b64` archive. In `patch-widget-flow.py`, changed the pin-widget replacement boundary from the removed `analyzeLink` method to the preserved `requestNotificationsPermission` method, and replaced the embedded downloader-oriented Media Hub text with the existing local audio/video library wording.
+- Repacked the archive, preserved the four alarm/reminder/widget/overlay patcher/test members, persisted the six updated base64 chunks to the repair branch, and verified the resulting archive.
+- Latest verification run: `43704156182`. Catalog extraction, app-source downloader removal, Android native ZIP sanitation, repair-script archive sanitation/inspection, and the cleaned-source Vite regression build all passed. The only failing gate is the intentional native Compose source gate because the primary source is still Capacitor/WebView. No Gradle build or APK upload occurred.
+- Independently inspected the uploaded source artifact: no downloader-specific APIs, routes, engines or labels remain in app source, native Java/XML archive, or the four retained repair scripts.
+
+The remaining full Compose migration and Android emulator/physical-device acceptance tests are still open; this cleanup does not mark them complete.
