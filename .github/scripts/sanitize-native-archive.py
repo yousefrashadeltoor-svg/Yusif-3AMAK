@@ -40,25 +40,34 @@ def decode_zip(raw: bytes) -> bytes:
 
 def patch_plugin(source: str) -> tuple[str, bool]:
     changed = False
-    start_match = re.search(r"@PluginMethod\s+public\s+void\s+analyzeLink\s*\(PluginCall\s+call\)\s*\{", source)
-    end_match = re.search(r"@PluginMethod\s+public\s+void\s+requestNotificationsPermission\s*\(PluginCall\s+call\)\s*\{", source)
-    if start_match:
-        if not end_match or end_match.start() <= start_match.start():
-            raise RuntimeError("Native bridge downloader block has no notification-permission boundary.")
-        source = source[:start_match.start()] + source[end_match.start():]
+    analyze_at = source.find("analyzeLink")
+    if analyze_at >= 0:
+        block_start = source.rfind("@PluginMethod", 0, analyze_at)
+        permission_at = source.find("requestNotificationsPermission", analyze_at)
+        block_end = source.rfind("@PluginMethod", analyze_at, permission_at) if permission_at >= 0 else -1
+        if block_start < 0 or block_end <= block_start:
+            raise RuntimeError("Native bridge downloader block has no preserved notification-permission method boundary.")
+        source = source[:block_start] + source[block_end:]
         changed = True
-    elif "analyzeLink" in source or "directDownload(" in source or "DownloadManager" in source:
-        raise RuntimeError("Native bridge contains download logic but its known method boundary changed.")
-    pending_pattern = re.compile(r"^\s*@PluginMethod\s+public\s+void\s+getPendingShare\s*\([^)]*\)\s*\{[^}]*\}\s*", re.MULTILINE)
-    source, pending_removed = pending_pattern.subn("", source, count=1)
-    if pending_removed:
+    elif "directDownload(" in source or "DownloadManager" in source:
+        raise RuntimeError("Native bridge contains download logic but no recognizable analyzeLink boundary.")
+
+    pending_at = source.find("getPendingShare")
+    if pending_at >= 0:
+        pending_start = source.rfind("@PluginMethod", 0, pending_at)
+        pending_end = source.find("}", pending_at)
+        if pending_start < 0 or pending_end < 0:
+            raise RuntimeError("Native bridge shared-URL handoff method boundary changed.")
+        line_end = source.find("\n", pending_end)
+        if line_end < 0:
+            line_end = len(source)
+        else:
+            line_end += 1
+        source = source[:pending_start] + source[line_end:]
         changed = True
-    elif "getPendingShare" in source:
-        raise RuntimeError("Native bridge contains shared-URL handoff but its method boundary changed.")
 
     for imp in REMOVE_IMPORTS:
         if imp in source:
-            # Remove only imports that became unused after downloader extraction.
             source = source.replace(imp, "", 1)
             changed = True
 
