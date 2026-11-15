@@ -105,7 +105,7 @@ def main() -> None:
     if missing:
         raise RuntimeError("Retained Android patch archive is missing: " + ", ".join(sorted(missing)))
     if forbidden_hits:
-        formatted = "\n".join(f"{path}: {token}" for path, token in forbidden_hits)
+        formatted = "\n".join(f"{path}:{line}: {token}: {excerpt}" for path, line, token, excerpt in forbidden_hits)
         raise RuntimeError("Downloader-specific patch content remains in retained repair archive:\n" + formatted)
 
     args.report.parent.mkdir(parents=True, exist_ok=True)
