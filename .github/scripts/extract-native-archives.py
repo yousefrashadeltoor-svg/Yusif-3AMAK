@@ -117,7 +117,7 @@ def extract_repair_scripts() -> None:
 """
     widget_safe = """    signature = '@PluginMethod public void syncState(PluginCall call) {'
     sync_start = p.find(signature)
-    sync_end = p.find('\\\\n    }', sync_start) if sync_start >= 0 else -1
+    sync_end = p.find('\n    }', sync_start) if sync_start >= 0 else -1
     if sync_start < 0 or sync_end < 0:
         raise RuntimeError("Native syncState method was not found; refusing to alter unknown plugin behavior")
     sync_method = p[sync_start:sync_end]
@@ -132,7 +132,7 @@ def extract_repair_scripts() -> None:
                 raise RuntimeError("Native syncState method has no expected resolve point; refusing to alter unknown plugin behavior")
             sync_method = sync_method.replace(
                 resolve_marker,
-                '        ' + widget_refresh + "\\\\n" + resolve_marker,
+                '        ' + widget_refresh + "\n" + resolve_marker,
                 1,
             )
             p = p[:sync_start] + sync_method + p[sync_end:]
@@ -140,7 +140,7 @@ def extract_repair_scripts() -> None:
     reminder_legacy = '    p = replace_once(p, old_sync, new_sync, "app state to native reminder scheduler")\n'
     reminder_safe = """    signature = '@PluginMethod public void syncState(PluginCall call) {'
     sync_start = p.find(signature)
-    sync_end = p.find('\\\\n    }', sync_start) if sync_start >= 0 else -1
+    sync_end = p.find('\n    }', sync_start) if sync_start >= 0 else -1
     if sync_start < 0 or sync_end < 0:
         raise RuntimeError("Native syncState method was not found; refusing to alter unknown plugin behavior")
     sync_method = p[sync_start:sync_end]
@@ -154,7 +154,7 @@ def extract_repair_scripts() -> None:
                 raise RuntimeError("Native syncState method has no expected resolve point; refusing to alter unknown plugin behavior")
             sync_method = sync_method.replace(
                 resolve_marker,
-                '        ' + reminder_sync + "\\\\n" + resolve_marker,
+                '        ' + reminder_sync + "\n" + resolve_marker,
                 1,
             )
             p = p[:sync_start] + sync_method + p[sync_end:]
