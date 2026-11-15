@@ -47,3 +47,8 @@ jobs:
           end
           puts "YAML and core job/step structure valid"
           RUBY
+
+  build:
+    name: Run the validated APK build
+    needs: validate
+    uses: ./.github/workflows/build-apk.yml
