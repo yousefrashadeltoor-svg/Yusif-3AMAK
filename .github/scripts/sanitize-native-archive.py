@@ -44,10 +44,13 @@ def patch_plugin(source: str) -> tuple[str, bool]:
     analyze_at = source.find("analyzeLink")
     if analyze_at >= 0:
         block_start = source.rfind("@PluginMethod", 0, analyze_at)
-        permission_at = source.find("requestNotificationsPermission", analyze_at)
-        block_end = source.rfind("@PluginMethod", analyze_at, permission_at) if permission_at >= 0 else -1
+        preserved_methods = ("requestNotificationsPermission", "showNotification", "syncState")
+        positions = [source.find(name, analyze_at + len("analyzeLink")) for name in preserved_methods]
+        positions = [position for position in positions if position >= 0]
+        preserved_at = min(positions) if positions else -1
+        block_end = source.rfind("@PluginMethod", analyze_at, preserved_at) if preserved_at >= 0 else -1
         if block_start < 0 or block_end <= block_start:
-            raise RuntimeError("Native bridge downloader block has no preserved notification-permission method boundary.")
+            raise RuntimeError("Native bridge downloader block has no preserved notification/state method boundary.")
         source = source[:block_start] + source[block_end:]
         changed = True
     elif "directDownload(" in source or "DownloadManager" in source:
