@@ -129,18 +129,21 @@ export const fmtBytes = (b: number) => (b <= 0 ? "—" : b < 1e6 ? (b / 1e3).toF
 
     # Native bridge: strip URL-analysis, media downloader and shared-URL handoff APIs.
     native = "android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java"
-    remove_block(root, native, '    @PluginMethod public void analyzeLink(PluginCall call) {', '    @PluginMethod public void requestNotificationsPermission(PluginCall call) {', "remove native URL extraction/download methods")
-    replace_once(root, native, '    @PluginMethod public void getPendingShare(PluginCall call) { JSObject out = new JSObject(); out.put("text", ""); call.resolve(out); }\n', "", "remove native shared-URL handoff")
-    for imp in (
-        "import android.app.DownloadManager;\n", "import android.webkit.URLUtil;\n",
-        "import org.json.JSONArray;\n", "import java.io.BufferedReader;\n",
-        "import java.io.InputStreamReader;\n", "import java.net.HttpURLConnection;\n",
-        "import java.net.URL;\n", "import java.util.Locale;\n",
-    ):
-        s = read(root, native)
-        if imp in s:
-            write(root, native, s.replace(imp, "", 1))
-
+    if (root / native).exists():
+        remove_block(root, native, '    @PluginMethod public void analyzeLink(PluginCall call) {', '    @PluginMethod public void requestNotificationsPermission(PluginCall call) {', "remove native URL extraction/download methods")
+        replace_once(root, native, '    @PluginMethod public void getPendingShare(PluginCall call) { JSObject out = new JSObject(); out.put("text", ""); call.resolve(out); }\n', "", "remove native shared-URL handoff")
+        for imp in (
+            "import android.app.DownloadManager;\n", "import android.webkit.URLUtil;\n",
+            "import org.json.JSONArray;\n", "import java.io.BufferedReader;\n",
+            "import java.io.InputStreamReader;\n", "import java.net.HttpURLConnection;\n",
+            "import java.net.URL;\n", "import java.util.Locale;\n",
+        ):
+            s = read(root, native)
+            if imp in s:
+                write(root, native, s.replace(imp, "", 1))
+    
+    else:
+        print("Generated Android bridge not present in the original source archive; native platform archive remains untouched for later Compose service migration.")
     # TypeScript side of the native bridge must no longer expose downloader methods.
     bridge = "src/lib/nativeBridge.ts"
     s = read(root, bridge)
