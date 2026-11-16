@@ -25,7 +25,7 @@ describe("DAYFLOW prayer-time calculation", () => {
     expect(city).toBeDefined();
     const result = prayerTimes(city!, instant);
     const ordered = [result.fajr, result.sunrise, result.dhuhr, result.asr, result.maghrib, result.isha];
-    expect(ordered.every((value) => /^\\d{2}:\\d{2}$/.test(value))).toBe(true);
+    expect(ordered.every((value) => /^\d{2}:\d{2}$/.test(value))).toBe(true);
     const values = ordered.map(minutes);
     for (let index = 1; index < values.length; index += 1) {
       expect(values[index]).toBeGreaterThan(values[index - 1]);
