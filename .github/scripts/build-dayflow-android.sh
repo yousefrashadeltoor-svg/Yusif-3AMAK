@@ -245,6 +245,11 @@ python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py"
 # Direct Android downloads must be cancellable by their real DownloadManager ID.
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py"
+# Select custom alarm audio through Android SAF and keep a persisted content URI.
+python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-sound-picker.py"
+grep -Fq 'takePersistableUriPermission(uri, readFlags)' android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java
+grep -Fq 'pickAlarmSound:()=>call("pickAlarmSound")' src/lib/nativeBridge.ts
+grep -Fq 'nativeBridge.pickAlarmSound?.()' src/screens/Alarms.tsx
 # Enforce source-level postconditions for system capabilities before compiling.
 grep -Fq 'static void cancelSnooze(Context c, String id)' android/app/src/main/java/app/dayflow/android/AlarmScheduler.java
 grep -Fq 'AlarmScheduler.restoreSnoozes(context)' android/app/src/main/java/app/dayflow/android/BootReceiver.java
@@ -262,6 +267,7 @@ python3 -m py_compile \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py" \
+  "$GITHUB_WORKSPACE/.github/scripts/patch-native-sound-picker.py" \
   "$GITHUB_WORKSPACE/.github/scripts/register-dayflow-bridge.py" \
   "$GITHUB_WORKSPACE/.github/scripts/test_native_widget_repair.py"
 DAYFLOW_SOURCE_DIR="$GITHUB_WORKSPACE/$PROJECT_ROOT" \

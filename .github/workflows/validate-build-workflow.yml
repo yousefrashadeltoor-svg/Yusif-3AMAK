@@ -75,7 +75,8 @@ jobs:
             .github/scripts/patch-native-alarms.py \
             .github/scripts/patch-native-alarm-snooze.py \
             .github/scripts/patch-native-download-cancel.py \
-            .github/scripts/patch-native-task-reminders.py
+            .github/scripts/patch-native-task-reminders.py \
+            .github/scripts/patch-native-sound-picker.py
           echo "Android build and emulator scripts passed syntax validation."
 
       - name: Validate emulator runner invokes one complete Bash script
