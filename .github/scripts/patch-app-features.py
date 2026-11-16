@@ -102,3 +102,88 @@ replace_once(SRC / "lib/store.ts", "widgetFont: \"sans\", cityIndex: 0,", "widge
 
 
 print("DAYFLOW feature patches applied: 12-hour clock, throttled companion rendering, native widget data sync, truthful direct-file format handling, and Giza default.")
+
+# 6) Make Quick Create reminders real, dated Android one-shot alarms.
+p = SRC / "App.tsx"
+replace_once(p, 'import { PERIODS, periodAt } from "./lib/ambience";',
+             'import { PERIODS, periodAt } from "./lib/ambience";\\nimport { dayKey } from "./lib/calendar";',
+             "Quick Create reminder date helper")
+replace_once(p,
+             'const [txt, setTxt] = useState(""); const [time, setTime] = useState("18:00");',
+             'const [txt, setTxt] = useState(""); const [time, setTime] = useState("18:00"); const [error, setError] = useState("");',
+             "Quick Create reminder error state")
+replace_once(p,
+             'const close = () => { setMode(null); setTxt(""); onClose(); };',
+             'const close = () => { setMode(null); setTxt(""); setError(""); onClose(); };',
+             "Quick Create reminder error reset")
+replace_once(p, 'const submit = (e: React.FormEvent) => {',
+             'const submit = async (e: React.FormEvent) => {',
+             "Quick Create async native reminder submission")
+old_reminder = '    if (mode === "reminder") s.addAlarm({ time, days: [], label: txt.trim(), enabled: true, sound: { source: "device", title: t("Default notification (device)", "صوت الإشعار الافتراضي") }, vibrate: true, snooze: 10, gentle: false });'
+new_reminder = """    if (mode === "reminder") {
+      const now = new Date();
+      const [hour, minute] = time.split(":").map(Number);
+      if (!Number.isInteger(hour) || hour < 0 || hour > 23 || !Number.isInteger(minute) || minute < 0 || minute > 59) {
+        setError(t("Choose a valid reminder time.", "اختار وقت صحيح للتذكير."));
+        return;
+      }
+      const when = new Date(now);
+      when.setHours(hour, minute, 0, 0);
+      if (when <= now) when.setDate(when.getDate() + 1);
+      const date = dayKey(when);
+      const alarm = {
+        time, date, days: [], label: txt.trim(), enabled: true,
+        sound: { source: "device" as const, title: t("Default notification (device)", "صوت الإشعار الافتراضي") },
+        vibrate: true, snooze: 10, gentle: false,
+      };
+      if (isAndroidApk()) {
+        try {
+          await nativeBridge.requestNotificationsPermission?.();
+          const permission = await nativeBridge.canScheduleExactAlarms?.();
+          if (permission && !permission.granted) {
+            await nativeBridge.requestExactAlarmPermission?.();
+            setError(t("Allow DAYFLOW to set alarms and reminders in Android Settings, then tap Save again.", "اسمح لـ DAYFLOW بضبط المنبهات والتذكيرات من إعدادات أندرويد، وبعدها اضغط حفظ مرة تانية."));
+            return;
+          }
+        } catch {
+          setError(t("Allow DAYFLOW to send notifications, then try again.", "اسمح لـ DAYFLOW بإرسال الإشعارات، وبعدها حاول تاني."));
+          return;
+        }
+      }
+      const id = s.addAlarm(alarm);
+      try {
+        await nativeBridge.scheduleAlarm({ id, date, time, days: [], label: alarm.label, vibrate: alarm.vibrate, snooze: alarm.snooze });
+      } catch {
+        s.removeAlarm(id);
+        setError(t("Android could not schedule this reminder. Check permissions and try again.", "أندرويد مقدرش يجدول التذكير. راجع الأذونات وحاول تاني."));
+        return;
+      }
+    }"""
+if new_reminder not in p.read_text(encoding="utf-8"):
+    replace_once(p, old_reminder, new_reminder, "real Quick Create reminder scheduling")
+replace_once(p,
+             '<div className="flex gap-2"><button type="button" className="btn btn-ghost" onClick={() => setMode(null)}>',
+             '{error && <p role="alert" className="text-xs text-red-600">{error}</p>}\\n          <div className="flex gap-2"><button type="button" className="btn btn-ghost" onClick={() => setMode(null)}>',
+             "Quick Create reminder error display")
+
+# Ask for notification permission before exact-alarm scheduling in the full editor.
+p = SRC / "screens/Alarms.tsx"
+replace_once(p,
+             '    if (a.enabled && isAndroidApk()) {\\n      const permission = await nativeBridge.canScheduleExactAlarms?.();',
+             '    if (a.enabled && isAndroidApk()) {\\n      try { await nativeBridge.requestNotificationsPermission?.(); }\\n      catch { setError(t("Allow DAYFLOW notifications so alarms can ring, then try again.", "اسمح بإشعارات DAYFLOW عشان المنبهات تقدر ترن، وبعدها حاول تاني.")); return; }\\n      const permission = await nativeBridge.canScheduleExactAlarms?.();',
+             "alarm notification permission before scheduling")
+replace_once(p,
+             'if (v && isAndroidApk()) { const permission = await nativeBridge.canScheduleExactAlarms?.();',
+             'if (v && isAndroidApk()) { try { await nativeBridge.requestNotificationsPermission?.(); } catch { return; } const permission = await nativeBridge.canScheduleExactAlarms?.();',
+             "alarm toggle notification permission")
+
+for path, needles in {
+    SRC / "App.tsx": ["const date = dayKey(when);", "await nativeBridge.scheduleAlarm({ id, date, time, days: [],", "requestNotificationsPermission"],
+    SRC / "screens/Alarms.tsx": ["requestNotificationsPermission", "canScheduleExactAlarms"],
+}.items():
+    text = path.read_text(encoding="utf-8")
+    for needle in needles:
+        if needle not in text:
+            raise RuntimeError(f"Quick Create / alarm permission postcondition missing in {path}: {needle}")
+
+print("DAYFLOW Quick Create reminders now schedule a valid next occurrence through Android; notification and exact-alarm permissions are requested before saving.")
