@@ -38,6 +38,18 @@ replace_once(
         return PendingIntent.getBroadcast(c, request, value, flags);
     }
 
+    static void cancelSnooze(Context c, String id) {
+        if (id == null || id.isEmpty()) return;
+        PendingIntent pi = pendingSnooze(c, id, null,
+                PendingIntent.FLAG_NO_CREATE | PendingIntent.FLAG_IMMUTABLE);
+        if (pi != null) {
+            AlarmManager manager = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
+            if (manager != null) manager.cancel(pi);
+            pi.cancel();
+        }
+        c.getSharedPreferences("dayflow_native", 0).edit().remove("snooze_" + id).apply();
+    }
+
     static void scheduleSnooze(Context c, String id, String label, String soundUri,
                                boolean vibrate, int snoozeMinutes) throws Exception {
         if (id == null || id.isEmpty()) throw new IllegalArgumentException("Alarm ID is required for snooze");
@@ -249,6 +261,7 @@ p.write_text(boot, encoding="utf-8")
 checks = {
     "AlarmScheduler.java": [
         "scheduleSnooze(Context c",
+        "static void cancelSnooze(Context c, String id)",
         "restoreSnoozes(Context c)",
         "setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)",
         'remove("snooze_" + id)'
