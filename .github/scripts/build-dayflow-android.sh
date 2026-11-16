@@ -240,6 +240,8 @@ python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
+# Direct Android downloads must be cancellable by their real DownloadManager ID.
+python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py"
 # Validate every patcher and run regression tests against the extracted real source.
 python3 -m py_compile \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py" \
@@ -247,6 +249,8 @@ python3 -m py_compile \
   "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py" \
+  "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py" \
+  "$GITHUB_WORKSPACE/.github/scripts/register-dayflow-bridge.py" \
   "$GITHUB_WORKSPACE/.github/scripts/test_native_widget_repair.py"
 DAYFLOW_SOURCE_DIR="$GITHUB_WORKSPACE/$PROJECT_ROOT" \
   python3 -m unittest discover \
@@ -255,6 +259,10 @@ DAYFLOW_SOURCE_DIR="$GITHUB_WORKSPACE/$PROJECT_ROOT" \
 # Compile the patched Web assets only after native source regressions pass.
 npm run build
 npx cap sync android
+# Capacitor sync may regenerate MainActivity; register the native plugin only after sync.
+PROJECT_ROOT="$GITHUB_WORKSPACE/$PROJECT_ROOT" python3 "$GITHUB_WORKSPACE/.github/scripts/register-dayflow-bridge.py"
+grep -q 'registerPlugin(DayflowBridgePlugin.class)' android/app/src/main/java/app/dayflow/android/MainActivity.java
+grep -q 'DownloadManager).remove(managerId)' android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java
 cd android
 if [[ -f ./gradlew ]]; then chmod +x ./gradlew; ./gradlew --no-daemon assembleDebug; else gradle --no-daemon assembleDebug; fi
 cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
