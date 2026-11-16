@@ -1,0 +1,38 @@
+name: DAYFLOW CI Runner Smoke Test
+run-name: DAYFLOW runner smoke — ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [repair/widget-native-state-bridge]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Verify GitHub runner can execute jobs
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify checkout and repository inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s ANDROID_REPAIR_AUDIT.md
+          test -s comprehensive-repository-audit-and-roadmap.zip
+          test -s android-native/native-source.zip.b64
+          test -s android-native/repair-scripts.tar.gz.b64
+          python3 - <<'PY'
+          import pathlib, zipfile
+          root = pathlib.Path.cwd()
+          z = root / "comprehensive-repository-audit-and-roadmap.zip"
+          with zipfile.ZipFile(z) as archive:
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit("Source archive is corrupt: " + bad)
+              print("Source archive entries:", len(archive.namelist()))
+          print("GitHub Actions runner can access and validate DAYFLOW source inputs.")
+          PY
