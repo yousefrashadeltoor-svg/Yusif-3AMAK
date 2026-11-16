@@ -239,6 +239,7 @@ python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
 # Keep patch order explicit: widget data bridge -> persistent reminders -> overlay sync.
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
+python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-task-reminders.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
 # Apply snooze after alarm/reminder changes so reboot recovery is preserved.
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py"
@@ -247,6 +248,8 @@ python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py"
 # Enforce source-level postconditions for system capabilities before compiling.
 grep -Fq 'static void cancelSnooze(Context c, String id)' android/app/src/main/java/app/dayflow/android/AlarmScheduler.java
 grep -Fq 'AlarmScheduler.restoreSnoozes(context)' android/app/src/main/java/app/dayflow/android/BootReceiver.java
+grep -Fq 'task_reminder_keys' android/app/src/main/java/app/dayflow/android/ReminderScheduler.java
+grep -Fq 'taskTime(date, time)' android/app/src/main/java/app/dayflow/android/ReminderScheduler.java
 grep -Fq 'snoozeAlarm(snoozeMinutes)' android/app/src/main/java/app/dayflow/android/AlarmRingActivity.java
 grep -Fq '.remove(managerId)' android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java
 # Validate every patcher and run regression tests against the extracted real source.
@@ -255,6 +258,7 @@ python3 -m py_compile \
   "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py" \
+  "$GITHUB_WORKSPACE/.github/scripts/patch-native-task-reminders.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py" \
