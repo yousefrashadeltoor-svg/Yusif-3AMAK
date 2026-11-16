@@ -182,6 +182,41 @@ jobs:
           printf '%s\n' "$BADGING" | grep -E "^package:"
           printf '%s\n' "$BADGING" | grep -E "^application-label:"
 
+      - name: Cold-launch DAYFLOW on Android Emulator
+        if: success()
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          emulator-boot-timeout: 600
+          emulator-options: -no-window -no-snapshot -no-audio -no-boot-anim -gpu swiftshader_indirect
+          disable-animations: true
+          script: |
+            set -euo pipefail
+            APK="$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
+            test -s "$APK"
+            adb install -r "$APK"
+            adb shell pm path app.dayflow.android | grep -q '^package:'
+            adb logcat -c
+            adb shell pm grant app.dayflow.android android.permission.POST_NOTIFICATIONS || true
+            adb shell am force-stop app.dayflow.android
+            adb shell monkey -p app.dayflow.android -c android.intent.category.LAUNCHER 1
+            PID=""
+            for attempt in $(seq 1 30); do
+              PID="$(adb shell pidof app.dayflow.android 2>/dev/null | tr -d '\r' || true)"
+              if [[ -n "$PID" ]]; then break; fi
+              sleep 1
+            done
+            test -n "$PID"
+            sleep 8
+            adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep -F 'app.dayflow.android'
+            CRASH_LOG="$(adb logcat -d -s AndroidRuntime:E)"
+            if printf '%s\n' "$CRASH_LOG" | grep -B2 -A8 -F 'Process: app.dayflow.android'; then
+              echo "DAYFLOW crashed during emulator cold launch." >&2
+              exit 1
+            fi
+            echo "DAYFLOW installed and cold-launched successfully on Android API 35 (PID=$PID)."
       - name: Upload verified APK and build report
         if: success()
         uses: actions/upload-artifact@v4
