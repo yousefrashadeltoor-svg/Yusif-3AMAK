@@ -61,3 +61,13 @@ jobs:
       - name: Lint GitHub Actions workflow semantics
         shell: bash
         run: actionlint -color .github/workflows/*.yml
+
+      - name: Validate Android build helper scripts
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash -n .github/scripts/build-dayflow-android.sh
+          python3 -m py_compile \
+            .github/scripts/register-dayflow-bridge.py \
+            .github/scripts/patch-native-download-cancel.py
+          echo "Android build scripts passed syntax validation."
