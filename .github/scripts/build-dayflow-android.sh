@@ -248,7 +248,7 @@ python3 -m py_compile \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py" \
   "$GITHUB_WORKSPACE/.github/scripts/test_native_widget_repair.py"
-DAYFLOW_SOURCE_DIR="$GITHUB_WORKSPACE/${{ steps.inspect.outputs.project_root }}" \
+DAYFLOW_SOURCE_DIR="$GITHUB_WORKSPACE/$PROJECT_ROOT" \
   python3 -m unittest discover \
     -s "$GITHUB_WORKSPACE/.github/scripts" \
     -p "test_native_widget_repair.py" -v
