@@ -143,10 +143,9 @@ public class AlarmReceiver extends BroadcastReceiver {
 }
 '''
 if old != new:
-    if "intent.getIntExtra(\"snooze\", 10)" not in old:
-        p.write_text(new, encoding="utf-8")
-    elif old != new:
-        raise SystemExit("AlarmReceiver has an unrecognized intermediate snooze state; refusing rewrite.")
+    if "class AlarmReceiver extends BroadcastReceiver" not in old or "NativeNotifications.showAlarm(" not in old or "AlarmScheduler.reschedule(context,id)" not in old:
+        raise SystemExit("AlarmReceiver has an unexpected structure; refusing an unsafe rewrite.")
+    p.write_text(new, encoding="utf-8")
 
 # Native alarm notification passes the selected snooze duration to the full-screen activity.
 p = ROOT / "NativeNotifications.java"
@@ -220,17 +219,31 @@ replace_once(
     "snooze handler",
 )
 
-# Snooze records restore independently of exact-alarm permission for reboot recovery.
+# Restore reminders and snoozes even when exact-alarm special access was revoked.
 p = ROOT / "BootReceiver.java"
-replace_once(
-    p,
-    '''  ReminderScheduler.restoreAll(context);
-  AlarmManager manager''',
-    '''  ReminderScheduler.restoreAll(context);
-  AlarmScheduler.restoreSnoozes(context);
-  AlarmManager manager''',
-    "boot snooze restore",
-)
+boot = p.read_text(encoding="utf-8")
+if "class BootReceiver" not in boot or "AlarmScheduler.restoreAll(context)" not in boot:
+    raise SystemExit("BootReceiver has an unexpected structure; refusing an unsafe rewrite.")
+boot = """package app.dayflow.android;
+import android.app.AlarmManager;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
+
+public final class BootReceiver extends BroadcastReceiver {
+    @Override public void onReceive(Context context, Intent intent) {
+        ReminderScheduler.restoreAll(context);
+        AlarmScheduler.restoreSnoozes(context);
+        AlarmManager manager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S
+                || (manager != null && manager.canScheduleExactAlarms())) {
+            AlarmScheduler.restoreAll(context);
+        }
+    }
+}
+"""
+p.write_text(boot, encoding="utf-8")
 
 # Required postconditions prevent false success.
 checks = {
