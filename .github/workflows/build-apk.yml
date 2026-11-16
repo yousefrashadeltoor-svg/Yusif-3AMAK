@@ -195,8 +195,12 @@ jobs:
           disable-animations: true
           script: |
             set -euo pipefail
-            APK="$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
-            test -s "$APK"
+            APK="${{ github.workspace }}/build-output/Yusif-3AMAK-debug.apk"
+            if [[ ! -s "$APK" ]]; then
+              echo "::error::Verified APK is missing inside emulator-runner script: $APK"
+              ls -lah "${{ github.workspace }}/build-output" || true
+              exit 1
+            fi
             adb install -r "$APK"
             adb shell pm path app.dayflow.android | grep -q '^package:'
             adb logcat -c
