@@ -235,6 +235,7 @@ activity.write_text(a)
 print("Registered DAYFLOW Capacitor native bridge in MainActivity.")
 PY
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
+python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
 # Keep patch order explicit: widget data bridge -> persistent reminders -> overlay sync.
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
