@@ -43,7 +43,7 @@ if old_cancel in source:
 elif new_cancel not in source:
     raise SystemExit("Expected no-op cancelDownload implementation was not found; refusing an unsafe rewrite.")
 
-if "DownloadManager).remove(managerId)" not in source or 'putLong("download_" + clientId, id)' not in source:
+if ".remove(managerId)" not in source or 'putLong("download_" + clientId, id)' not in source:
     raise SystemExit("Native download cancellation postcondition failed.")
 
 plugin.write_text(source, encoding="utf-8")
