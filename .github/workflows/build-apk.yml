@@ -193,35 +193,7 @@ jobs:
           emulator-boot-timeout: 300
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none
           disable-animations: true
-          script: |
-            set -eu
-            APK="${{ github.workspace }}/build-output/Yusif-3AMAK-debug.apk"
-            if [ ! -s "$APK" ]; then
-              echo "::error::Verified APK is missing inside emulator-runner script: $APK"
-              ls -lah "${{ github.workspace }}/build-output" || true
-              exit 1
-            fi
-            adb install -r "$APK"
-            adb shell pm path app.dayflow.android | grep -q '^package:'
-            adb logcat -c
-            adb shell pm grant app.dayflow.android android.permission.POST_NOTIFICATIONS || true
-            adb shell am force-stop app.dayflow.android
-            adb shell monkey -p app.dayflow.android -c android.intent.category.LAUNCHER 1
-            PID=""
-            for attempt in $(seq 1 30); do
-              PID="$(adb shell pidof app.dayflow.android 2>/dev/null | tr -d '\r' || true)"
-              if [[ -n "$PID" ]]; then break; fi
-              sleep 1
-            done
-            test -n "$PID"
-            sleep 8
-            adb shell dumpsys activity activities | grep -E 'mResumedActivity|topResumedActivity' | grep -F 'app.dayflow.android'
-            CRASH_LOG="$(adb logcat -d -s AndroidRuntime:E)"
-            if printf '%s\n' "$CRASH_LOG" | grep -B2 -A8 -F 'Process: app.dayflow.android'; then
-              echo "DAYFLOW crashed during emulator cold launch." >&2
-              exit 1
-            fi
-            echo "DAYFLOW installed and cold-launched successfully on Android API 35 (PID=$PID)."
+          script: bash "${{ github.workspace }}/.github/scripts/emulator-smoke-test.sh" "${{ github.workspace }}/build-output/Yusif-3AMAK-debug.apk"
       - name: Upload verified APK and build report
         if: success()
         uses: actions/upload-artifact@v4

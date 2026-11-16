@@ -67,16 +67,21 @@ jobs:
         run: |
           set -euo pipefail
           bash -n .github/scripts/build-dayflow-android.sh
+          bash -n .github/scripts/build-dayflow-android.sh
+          bash -n .github/scripts/emulator-smoke-test.sh
           python3 -m py_compile \
             .github/scripts/register-dayflow-bridge.py \
+            .github/scripts/patch-app-features.py \
+            .github/scripts/patch-native-alarms.py \
             .github/scripts/patch-native-alarm-snooze.py \
-            .github/scripts/patch-native-download-cancel.py
-          echo "Android build scripts passed syntax validation."
+            .github/scripts/patch-native-download-cancel.py \
+            .github/scripts/patch-native-task-reminders.py
+          echo "Android build and emulator scripts passed syntax validation."
 
-      - name: Validate emulator smoke test with the runner's POSIX shell
+      - name: Validate emulator runner invokes one complete Bash script
         shell: bash
         run: |
           set -euo pipefail
-          ruby -ryaml -e 'workflow = YAML.load_file(".github/workflows/build-apk.yml"); steps = workflow.fetch("jobs").fetch("build-apk").fetch("steps"); step = steps.find { |item| item["uses"].to_s.start_with?("ReactiveCircus/android-emulator-runner@") }; abort "Android emulator runner step or script is missing" unless step && step.dig("with", "script").is_a?(String); File.write(File.join(ENV.fetch("RUNNER_TEMP"), "dayflow-emulator-smoke.sh"), step.dig("with", "script"))'
-          sh -n "$RUNNER_TEMP/dayflow-emulator-smoke.sh"
-          echo "Emulator smoke test is valid POSIX shell."
+          ruby -ryaml -e 'workflow = YAML.load_file(".github/workflows/build-apk.yml"); steps = workflow.fetch("jobs").fetch("build-apk").fetch("steps"); step = steps.find { |item| item["uses"].to_s.start_with?("ReactiveCircus/android-emulator-runner@") }; script = step&.dig("with", "script").to_s.strip; abort "Emulator step must call the committed smoke-test script in one command" unless script.lines.length == 1 && script.include?(".github/scripts/emulator-smoke-test.sh")'
+          bash -n .github/scripts/emulator-smoke-test.sh
+          echo "Emulator smoke test is one complete Bash invocation and passes bash -n."

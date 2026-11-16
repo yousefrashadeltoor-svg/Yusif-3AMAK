@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { CITIES, prayerTimes } from "./prayer";
+import { CITIES, prayerTimes } from "../src/lib/prayer";
 
 const instant = new Date("2026-11-16T10:00:00.000Z"); // 12:00 in Cairo on the official comparison date.
 const minutes = (value: string) => {
