@@ -262,7 +262,7 @@ npx cap sync android
 # Capacitor sync may regenerate MainActivity; register the native plugin only after sync.
 PROJECT_ROOT="$GITHUB_WORKSPACE/$PROJECT_ROOT" python3 "$GITHUB_WORKSPACE/.github/scripts/register-dayflow-bridge.py"
 grep -q 'registerPlugin(DayflowBridgePlugin.class)' android/app/src/main/java/app/dayflow/android/MainActivity.java
-grep -q 'DownloadManager).remove(managerId)' android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java
+grep -q '.remove(managerId)' android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java
 cd android
 if [[ -f ./gradlew ]]; then chmod +x ./gradlew; ./gradlew --no-daemon assembleDebug; else gradle --no-daemon assembleDebug; fi
 cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/build-output/Yusif-3AMAK-debug.apk"
