@@ -106,7 +106,7 @@ print("DAYFLOW feature patches applied: 12-hour clock, throttled companion rende
 # 6) Make Quick Create reminders real, dated Android one-shot alarms.
 p = SRC / "App.tsx"
 replace_once(p, 'import { PERIODS, periodAt } from "./lib/ambience";',
-             'import { PERIODS, periodAt } from "./lib/ambience";\\nimport { dayKey } from "./lib/calendar";',
+             'import { PERIODS, periodAt } from "./lib/ambience";\nimport { dayKey } from "./lib/calendar";',
              "Quick Create reminder date helper")
 replace_once(p,
              'const [txt, setTxt] = useState(""); const [time, setTime] = useState("18:00");',
@@ -163,14 +163,14 @@ if new_reminder not in p.read_text(encoding="utf-8"):
     replace_once(p, old_reminder, new_reminder, "real Quick Create reminder scheduling")
 replace_once(p,
              '<div className="flex gap-2"><button type="button" className="btn btn-ghost" onClick={() => setMode(null)}>',
-             '{error && <p role="alert" className="text-xs text-red-600">{error}</p>}\\n          <div className="flex gap-2"><button type="button" className="btn btn-ghost" onClick={() => setMode(null)}>',
+             '{error && <p role="alert" className="text-xs text-red-600">{error}</p>}\n          <div className="flex gap-2"><button type="button" className="btn btn-ghost" onClick={() => setMode(null)}>',
              "Quick Create reminder error display")
 
 # Ask for notification permission before exact-alarm scheduling in the full editor.
 p = SRC / "screens/Alarms.tsx"
 replace_once(p,
-             '    if (a.enabled && isAndroidApk()) {\\n      const permission = await nativeBridge.canScheduleExactAlarms?.();',
-             '    if (a.enabled && isAndroidApk()) {\\n      try { await nativeBridge.requestNotificationsPermission?.(); }\\n      catch { setError(t("Allow DAYFLOW notifications so alarms can ring, then try again.", "اسمح بإشعارات DAYFLOW عشان المنبهات تقدر ترن، وبعدها حاول تاني.")); return; }\\n      const permission = await nativeBridge.canScheduleExactAlarms?.();',
+             '    if (a.enabled && isAndroidApk()) {\n      const permission = await nativeBridge.canScheduleExactAlarms?.();',
+             '    if (a.enabled && isAndroidApk()) {\n      try { await nativeBridge.requestNotificationsPermission?.(); }\n      catch { setError(t("Allow DAYFLOW notifications so alarms can ring, then try again.", "اسمح بإشعارات DAYFLOW عشان المنبهات تقدر ترن، وبعدها حاول تاني.")); return; }\n      const permission = await nativeBridge.canScheduleExactAlarms?.();',
              "alarm notification permission before scheduling")
 replace_once(p,
              'if (v && isAndroidApk()) { const permission = await nativeBridge.canScheduleExactAlarms?.();',
