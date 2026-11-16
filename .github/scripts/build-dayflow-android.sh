@@ -268,6 +268,14 @@ DAYFLOW_SOURCE_DIR="$GITHUB_WORKSPACE/$PROJECT_ROOT" \
   python3 -m unittest discover \
     -s "$GITHUB_WORKSPACE/.github/scripts" \
     -p "test_native_widget_repair.py" -v
+# Validate the local astronomical prayer calculation against the official Egyptian table.
+PRAYER_TEST="src/lib/prayer-times.repair.test.ts"
+cp "$GITHUB_WORKSPACE/.github/tests/prayer-times.test.ts" "$PRAYER_TEST"
+if ! npx vitest run "$PRAYER_TEST"; then
+  rm -f "$PRAYER_TEST"
+  exit 1
+fi
+rm -f "$PRAYER_TEST"
 # Compile the patched Web assets only after native source regressions pass.
 npm run build
 npx cap sync android
