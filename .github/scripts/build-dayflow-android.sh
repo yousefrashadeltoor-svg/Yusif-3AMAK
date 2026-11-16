@@ -235,12 +235,13 @@ activity.write_text(a)
 print("Registered DAYFLOW Capacitor native bridge in MainActivity.")
 PY
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py"
-python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-app-features.py"
 # Keep patch order explicit: widget data bridge -> persistent reminders -> overlay sync.
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
+# Apply snooze after alarm/reminder changes so reboot recovery is preserved.
+python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py"
 # Direct Android downloads must be cancellable by their real DownloadManager ID.
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py"
 # Validate every patcher and run regression tests against the extracted real source.
@@ -250,6 +251,7 @@ python3 -m py_compile \
   "$GITHUB_WORKSPACE/.github/scripts/patch-widget-flow.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-reminders.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py" \
+  "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py" \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py" \
   "$GITHUB_WORKSPACE/.github/scripts/register-dayflow-bridge.py" \
   "$GITHUB_WORKSPACE/.github/scripts/test_native_widget_repair.py"
