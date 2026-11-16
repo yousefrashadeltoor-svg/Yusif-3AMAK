@@ -244,6 +244,11 @@ python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-runtime.py"
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarm-snooze.py"
 # Direct Android downloads must be cancellable by their real DownloadManager ID.
 python3 "$GITHUB_WORKSPACE/.github/scripts/patch-native-download-cancel.py"
+# Enforce source-level postconditions for system capabilities before compiling.
+grep -Fq 'static void cancelSnooze(Context c, String id)' android/app/src/main/java/app/dayflow/android/AlarmScheduler.java
+grep -Fq 'AlarmScheduler.restoreSnoozes(context)' android/app/src/main/java/app/dayflow/android/BootReceiver.java
+grep -Fq 'snoozeAlarm(snoozeMinutes)' android/app/src/main/java/app/dayflow/android/AlarmRingActivity.java
+grep -Fq '.remove(managerId)' android/app/src/main/java/app/dayflow/android/DayflowBridgePlugin.java
 # Validate every patcher and run regression tests against the extracted real source.
 python3 -m py_compile \
   "$GITHUB_WORKSPACE/.github/scripts/patch-native-alarms.py" \
