@@ -72,3 +72,11 @@ jobs:
             .github/scripts/patch-native-alarm-snooze.py \
             .github/scripts/patch-native-download-cancel.py
           echo "Android build scripts passed syntax validation."
+
+      - name: Validate emulator smoke test with the runner's POSIX shell
+        shell: bash
+        run: |
+          set -euo pipefail
+          ruby -ryaml -e 'workflow = YAML.load_file(".github/workflows/build-apk.yml"); steps = workflow.fetch("jobs").fetch("build-apk").fetch("steps"); step = steps.find { |item| item["uses"].to_s.start_with?("ReactiveCircus/android-emulator-runner@") }; abort "Android emulator runner step or script is missing" unless step && step.dig("with", "script").is_a?(String); File.write(File.join(ENV.fetch("RUNNER_TEMP"), "dayflow-emulator-smoke.sh"), step.dig("with", "script"))'
+          sh -n "$RUNNER_TEMP/dayflow-emulator-smoke.sh"
+          echo "Emulator smoke test is valid POSIX shell."

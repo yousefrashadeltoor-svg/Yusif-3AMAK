@@ -194,9 +194,9 @@ jobs:
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none
           disable-animations: true
           script: |
-            set -euo pipefail
+            set -eu
             APK="${{ github.workspace }}/build-output/Yusif-3AMAK-debug.apk"
-            if [[ ! -s "$APK" ]]; then
+            if [ ! -s "$APK" ]; then
               echo "::error::Verified APK is missing inside emulator-runner script: $APK"
               ls -lah "${{ github.workspace }}/build-output" || true
               exit 1
