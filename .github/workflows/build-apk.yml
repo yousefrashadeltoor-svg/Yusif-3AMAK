@@ -172,8 +172,15 @@ jobs:
                   raise SystemExit("Corrupt APK entry: " + bad)
           print(f"APK ZIP structure valid: {apk.stat().st_size} bytes")
           PY
-          apksigner verify --verbose "$APK"
-          aapt dump badging "$APK" | grep -E "^package:|^application-label:"
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          APKSIGNER="$BUILD_TOOLS/apksigner"
+          AAPT="$BUILD_TOOLS/aapt"
+          test -x "$APKSIGNER"
+          test -x "$AAPT"
+          "$APKSIGNER" verify --verbose "$APK"
+          BADGING="$("$AAPT" dump badging "$APK")"
+          printf '%s\n' "$BADGING" | grep -E "^package:"
+          printf '%s\n' "$BADGING" | grep -E "^application-label:"
 
       - name: Upload verified APK and build report
         if: success()
