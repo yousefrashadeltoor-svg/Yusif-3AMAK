@@ -1,0 +1,25 @@
+name: DAYFLOW APK Job Probe
+run-name: DAYFLOW APK probe — ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [repair/widget-native-state-bridge]
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build APK probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Verify APK job can start
+        shell: bash
+        run: |
+          set -euo pipefail
+          echo "APK job scheduling probe started."
+          test -s comprehensive-repository-audit-and-roadmap.zip
+          echo "APK source archive is present."
