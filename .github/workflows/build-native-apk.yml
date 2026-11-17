@@ -101,6 +101,32 @@ jobs:
           grep -Fq 'android:description="@string/widget_water_description"' native-dayflow/app/src/main/res/xml/dayflow_widget_water_info.xml
           grep -Fq 'widget_dayflow_description' native-dayflow/app/src/main/res/values/strings.xml
           grep -Fq 'widget_water_description' native-dayflow/app/src/main/res/values/strings.xml
+          # Fix the assistant fallback's unmatched closing parenthesis before Kotlin compilation.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt")
+          lines = path.read_text(encoding="utf-8").splitlines()
+          found = False
+          for index, line in enumerate(lines):
+              stripped = line.rstrip()
+              if stripped.startswith('else -> if (isArabic) "أنا المساعد المحلي لـDAYFLOW.'):
+                  if stripped.endswith('build.")'):
+                      lines[index] = stripped[:-1]
+                      found = True
+                  elif stripped.endswith('build."'):
+                      found = True
+                  else:
+                      raise SystemExit("Assistant fallback line has an unexpected ending; refusing a blind edit.")
+                  break
+          if not found:
+              raise SystemExit("Assistant fallback line was not found in DayflowApp.kt.")
+          source = "\n".join(lines) + "\n"
+          if 'Connected AI chat is not enabled in this native build.")' in source:
+              raise SystemExit("Assistant fallback still contains the unmatched closing parenthesis.")
+          path.write_text(source, encoding="utf-8")
+          print("Verified assistant fallback Kotlin syntax anchor.")
+          PY
+          grep -Fq 'Connected AI chat is not enabled in this native build."' native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
           test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
