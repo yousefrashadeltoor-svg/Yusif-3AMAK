@@ -107,10 +107,12 @@ jobs:
           path = Path("native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt")
           lines = path.read_text(encoding="utf-8").splitlines()
           found = False
+          assistant_index = None
           for index, line in enumerate(lines):
               stripped = line.strip()
               if stripped.startswith('else -> if (isArabic) "أنا المساعد المحلي لـDAYFLOW.'):
                   indent = line[:len(line) - len(line.lstrip())]
+                  assistant_index = index
                   if stripped.endswith('build.")'):
                       lines[index] = indent + stripped[:-1]
                       found = True
@@ -119,13 +121,35 @@ jobs:
                   else:
                       raise SystemExit("Assistant fallback line has an unexpected ending; refusing a blind edit.")
                   break
-          if not found:
+          if not found or assistant_index is None:
               raise SystemExit("Assistant fallback line was not found in DayflowApp.kt.")
-          source = "\n".join(lines) + "\n"
+          callback_close = next((i for i in range(assistant_index + 1, len(lines))
+                                 if lines[i].strip().startswith('}, modifier = Modifier.padding(padding))')), None)
+          if callback_close is None:
+              raise SystemExit("Assistant callback closing line was not found.")
+          previous = next((lines[i].strip() for i in range(callback_close - 1, assistant_index, -1)
+                           if lines[i].strip()), "")
+          if previous != "}":
+              lines.insert(callback_close, "                            }")
+          source = "\\n".join(lines) + "\\n"
           if 'Connected AI chat is not enabled in this native build.")' in source:
               raise SystemExit("Assistant fallback still contains the unmatched closing parenthesis.")
+          widget = Path("native-dayflow/app/src/main/java/app/dayflow/android/system/DayflowWaterWidgetProvider.kt")
+          widget_source = widget.read_text(encoding="utf-8")
+          widget_import = "import app.dayflow.android.data.formatClock"
+          widget_anchor = "import app.dayflow.android.data.DayflowRepository"
+          if widget_import not in widget_source:
+              if widget_anchor not in widget_source:
+                  raise SystemExit("Water widget repository import anchor missing.")
+              widget_source = widget_source.replace(widget_anchor, widget_anchor + "\\n" + widget_import, 1)
+              widget.write_text(widget_source, encoding="utf-8")
+          if widget_import not in widget.read_text(encoding="utf-8"):
+              raise SystemExit("Water widget formatClock import was not applied.")
           path.write_text(source, encoding="utf-8")
-          print("Verified assistant fallback Kotlin syntax anchor.")
+          print("Verified assistant when/lambda closure and water widget formatClock import.")
+          PY
+          grep -Fq 'import app.dayflow.android.data.formatClock' native-dayflow/app/src/main/java/app/dayflow/android/system/DayflowWaterWidgetProvider.kt
+          grep -Fq 'Connected AI chat is not enabled in this native build.' native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
           PY
           grep -Fq 'Connected AI chat is not enabled in this native build."' native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
