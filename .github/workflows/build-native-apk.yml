@@ -108,10 +108,11 @@ jobs:
           lines = path.read_text(encoding="utf-8").splitlines()
           found = False
           for index, line in enumerate(lines):
-              stripped = line.rstrip()
+              stripped = line.strip()
               if stripped.startswith('else -> if (isArabic) "أنا المساعد المحلي لـDAYFLOW.'):
+                  indent = line[:len(line) - len(line.lstrip())]
                   if stripped.endswith('build.")'):
-                      lines[index] = stripped[:-1]
+                      lines[index] = indent + stripped[:-1]
                       found = True
                   elif stripped.endswith('build."'):
                       found = True
