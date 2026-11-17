@@ -419,3 +419,16 @@ jobs:
             build-output/DAYFLOW-native-source.zip
           if-no-files-found: error
           retention-days: 30
+
+      - name: Upload native source and test diagnostics (no APK)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAYFLOW-NATIVE-TEST-DIAGNOSTICS
+          path: |
+            build-output/DAYFLOW-native-source.zip
+            build-output/DAYFLOW-native-source.tar.gz
+            native-dayflow/app/build/reports/androidTests/connected/debug/
+            native-dayflow/app/build/outputs/androidTest-results/connected/debug/
+          if-no-files-found: warn
+          retention-days: 7
