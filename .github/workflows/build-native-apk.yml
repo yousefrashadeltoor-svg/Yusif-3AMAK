@@ -49,6 +49,55 @@ jobs:
           path.write_text(source, encoding="utf-8")
           print("Pinned Compose, Activity and Core to versions compatible with compileSdk 35 / AGP 8.13.")
           PY
+          # AppWidgetProviderInfo android:description is a resource reference, never an inline literal.
+          python3 - <<'PY'
+          from pathlib import Path
+          root = Path("native-dayflow/app/src/main/res")
+          widgets = {
+              "xml/dayflow_widget_info.xml": (
+                  'android:description="DAYFLOW daily overview"',
+                  'android:description="@string/widget_dayflow_description"',
+              ),
+              "xml/dayflow_widget_water_info.xml": (
+                  'android:description="DAYFLOW hydration and alarm overview"',
+                  'android:description="@string/widget_water_description"',
+              ),
+          }
+          for relative, (old, new) in widgets.items():
+              path = root / relative
+              source = path.read_text(encoding="utf-8")
+              if old in source:
+                  source = source.replace(old, new, 1)
+              elif new not in source:
+                  raise SystemExit(f"Widget description anchor missing: {relative}")
+              path.write_text(source, encoding="utf-8")
+          values = root / "values"
+          values.mkdir(parents=True, exist_ok=True)
+          strings = values / "strings.xml"
+          if strings.exists():
+              source = strings.read_text(encoding="utf-8")
+          else:
+              source = "<resources>\\n</resources>\\n"
+          resources = {
+              "widget_dayflow_description": "DAYFLOW daily overview",
+              "widget_water_description": "DAYFLOW hydration and alarm overview",
+          }
+          for name, value in resources.items():
+              if f'name="{name}"' not in source:
+                  source = source.replace("</resources>", f'    <string name="{name}">{value}</string>\\n</resources>')
+          strings.write_text(source, encoding="utf-8")
+          for relative, (_, new) in widgets.items():
+              if new not in (root / relative).read_text(encoding="utf-8"):
+                  raise SystemExit(f"Widget resource reference not applied: {relative}")
+          for name in resources:
+              if f'name="{name}"' not in strings.read_text(encoding="utf-8"):
+                  raise SystemExit(f"Widget string resource missing: {name}")
+          print("Widget XML descriptions now use valid Android string-resource references.")
+          PY
+          grep -Fq 'android:description="@string/widget_dayflow_description"' native-dayflow/app/src/main/res/xml/dayflow_widget_info.xml
+          grep -Fq 'android:description="@string/widget_water_description"' native-dayflow/app/src/main/res/xml/dayflow_widget_water_info.xml
+          grep -Fq 'widget_dayflow_description' native-dayflow/app/src/main/res/values/strings.xml
+          grep -Fq 'widget_water_description' native-dayflow/app/src/main/res/values/strings.xml
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
           test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
