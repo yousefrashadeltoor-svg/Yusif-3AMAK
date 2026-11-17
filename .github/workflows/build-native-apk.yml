@@ -170,6 +170,65 @@ jobs:
           PY
           grep -Fq 'import androidx.compose.ui.test.assertIsDisplayed' native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt
           if grep -Fq 'assertExists' native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt; then exit 1; fi
+          # Keep minSdk 26 while correctly scoping newer platform attributes.
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          app = Path("native-dayflow/app/src/main")
+          base_styles = app / "res/values/styles.xml"
+          styles = base_styles.read_text(encoding="utf-8")
+          style_lines = styles.splitlines()
+          filtered = [line for line in style_lines if "android:windowLightNavigationBar" not in line]
+          if len(filtered) == len(style_lines):
+              raise SystemExit("Expected API-27 navigation style item was not found.")
+          base_styles.write_text(chr(10).join(filtered) + chr(10), encoding="utf-8")
+          qualified = app / "res/values-v27"
+          qualified.mkdir(parents=True, exist_ok=True)
+          (qualified / "styles.xml").write_text(
+              """<resources>
+              <style name="Theme.Dayflow" parent="android:style/Theme.Material.Light.NoActionBar">
+                  <item name="android:fontFamily">sans</item>
+                  <item name="android:windowLightStatusBar">false</item>
+                  <item name="android:statusBarColor">#111319</item>
+                  <item name="android:navigationBarColor">#111319</item>
+                  <item name="android:windowLightNavigationBar">false</item>
+                  <item name="android:windowActionModeOverlay">true</item>
+                  <item name="android:colorAccent">#C4A46A</item>
+              </style>
+          </resources>
+          """, encoding="utf-8"
+          )
+          manifest = app / "AndroidManifest.xml"
+          source = manifest.read_text(encoding="utf-8")
+          source = source.replace(
+              'xmlns:android="http://schemas.android.com/apk/res/android">',
+              'xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">',
+              1
+          )
+          source = source.replace(
+              'android:excludeFromRecents="true" />',
+              'android:excludeFromRecents="true" tools:targetApi="27" />',
+              1
+          )
+          source = source.replace(
+              'android:foregroundServiceType="specialUse">',
+              'android:foregroundServiceType="specialUse" tools:targetApi="34">',
+              1
+          )
+          if 'tools:targetApi="27"' not in source or 'tools:targetApi="34"' not in source:
+              raise SystemExit("Manifest API-level annotations were not applied.")
+          manifest.write_text(source, encoding="utf-8")
+          ET.parse(manifest)
+          ET.parse(base_styles)
+          ET.parse(qualified / "styles.xml")
+          if "windowLightNavigationBar" in base_styles.read_text(encoding="utf-8"):
+              raise SystemExit("API-27 navigation attribute remains in the base values resource.")
+          print("Moved API-27 navigation style to values-v27 and annotated API-27/API-34 manifest declarations.")
+          PY
+          grep -Fq 'windowLightNavigationBar' native-dayflow/app/src/main/res/values-v27/styles.xml
+          if grep -Fq 'windowLightNavigationBar' native-dayflow/app/src/main/res/values/styles.xml; then exit 1; fi
+          grep -Fq 'tools:targetApi="27"' native-dayflow/app/src/main/AndroidManifest.xml
+          grep -Fq 'tools:targetApi="34"' native-dayflow/app/src/main/AndroidManifest.xml
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
           test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
