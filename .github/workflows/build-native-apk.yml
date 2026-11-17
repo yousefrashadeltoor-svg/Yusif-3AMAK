@@ -131,7 +131,7 @@ jobs:
                            if lines[i].strip()), "")
           if previous != "}":
               lines.insert(callback_close, "                            }")
-          source = "\\n".join(lines) + "\\n"
+          source = chr(10).join(lines) + chr(10)
           if 'Connected AI chat is not enabled in this native build.")' in source:
               raise SystemExit("Assistant fallback still contains the unmatched closing parenthesis.")
           widget = Path("native-dayflow/app/src/main/java/app/dayflow/android/system/DayflowWaterWidgetProvider.kt")
@@ -141,7 +141,7 @@ jobs:
           if widget_import not in widget_source:
               if widget_anchor not in widget_source:
                   raise SystemExit("Water widget repository import anchor missing.")
-              widget_source = widget_source.replace(widget_anchor, widget_anchor + "\\n" + widget_import, 1)
+              widget_source = widget_source.replace(widget_anchor, widget_anchor + chr(10) + widget_import, 1)
               widget.write_text(widget_source, encoding="utf-8")
           if widget_import not in widget.read_text(encoding="utf-8"):
               raise SystemExit("Water widget formatClock import was not applied.")
