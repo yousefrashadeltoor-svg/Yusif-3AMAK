@@ -402,7 +402,7 @@ jobs:
           target: google_atd
           arch: x86_64
           profile: pixel_5
-          emulator-boot-timeout: 300
+          emulator-boot-timeout: 600
           emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none
           disable-animations: true
           script: bash "${{ github.workspace }}/.github/scripts/native-emulator-smoke-test.sh" "${{ github.workspace }}/build-output/DAYFLOW-native-debug.apk"
