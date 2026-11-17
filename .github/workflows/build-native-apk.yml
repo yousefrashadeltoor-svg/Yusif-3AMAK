@@ -252,6 +252,59 @@ jobs:
           PY
           grep -Fq '<TextView android:layout_width="match_parent" android:layout_height="1dp" android:text=""' native-dayflow/app/src/main/res/layout/dayflow_widget_water.xml
           if grep -Fq '<View' native-dayflow/app/src/main/res/layout/dayflow_widget_water.xml; then exit 1; fi
+          # Exercise the actual native UI route: settings widgets, then Tools -> theme preview.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt")
+          source = path.read_text(encoding="utf-8")
+          click_import = "import androidx.compose.ui.test.performClick"
+          scroll_import = "import androidx.compose.ui.test.performScrollTo"
+          if scroll_import not in source:
+              if click_import not in source:
+                  raise SystemExit("Compose performClick import anchor missing.")
+              source = source.replace(click_import, click_import + chr(10) + scroll_import, 1)
+          for old, new in (
+              ('compose.onNodeWithText("ويدجتس الشاشة الرئيسية").assertIsDisplayed()',
+               'compose.onNodeWithText("ويدجتس الشاشة الرئيسية").performScrollTo().assertIsDisplayed()'),
+              ('compose.onNodeWithText("إضافة ملخص اليوم").assertIsDisplayed()',
+               'compose.onNodeWithText("إضافة ملخص اليوم").performScrollTo().assertIsDisplayed()'),
+              ('compose.onNodeWithText("إضافة المياه والمنبهات").assertIsDisplayed()',
+               'compose.onNodeWithText("إضافة المياه والمنبهات").performScrollTo().assertIsDisplayed()'),
+          ):
+              source = source.replace(old, new, 1)
+          lines = source.splitlines()
+          old_route = [
+              '        compose.onNodeWithText("معاينة").performClick()',
+              '        compose.onNodeWithText("معاينة الثيمات").assertIsDisplayed()',
+              '        compose.onNodeWithText("Your day, calmly").assertIsDisplayed()',
+          ]
+          new_route = [
+              '        compose.onNodeWithContentDescription("الأدوات").performClick()',
+              '        compose.onNodeWithText("معاينة").performScrollTo().performClick()',
+              '        compose.onNodeWithText("معاينة الثيمات").assertIsDisplayed()',
+          ]
+          if all(line in lines for line in old_route):
+              idx = next(i for i in range(len(lines) - 2) if lines[i:i+3] == old_route)
+              lines[idx:idx+3] = new_route
+          elif not all(line in lines for line in new_route):
+              raise SystemExit("Theme preview test route did not match the known UI structure.")
+          source = chr(10).join(lines) + chr(10)
+          required = (
+              scroll_import,
+              'compose.onNodeWithContentDescription("الأدوات").performClick()',
+              'compose.onNodeWithText("معاينة").performScrollTo().performClick()',
+              'compose.onNodeWithText("معاينة الثيمات").assertIsDisplayed()',
+          )
+          for token in required:
+              if token not in source:
+                  raise SystemExit("Native UI test route correction missing: " + token)
+          if 'compose.onNodeWithText("Your day, calmly").assertIsDisplayed()' in source:
+              raise SystemExit("Ambiguous repeated theme preview text assertion remains.")
+          path.write_text(source, encoding="utf-8")
+          print("Native UI test follows Settings -> widgets -> Tools -> theme preview.")
+          PY
+          grep -Fq 'import androidx.compose.ui.test.performScrollTo' native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt
+          grep -Fq 'compose.onNodeWithContentDescription("الأدوات").performClick()' native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
           test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
