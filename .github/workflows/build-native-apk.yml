@@ -150,7 +150,6 @@ jobs:
           PY
           grep -Fq 'import app.dayflow.android.data.formatClock' native-dayflow/app/src/main/java/app/dayflow/android/system/DayflowWaterWidgetProvider.kt
           grep -Fq 'Connected AI chat is not enabled in this native build.' native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
-          PY
           grep -Fq 'Connected AI chat is not enabled in this native build."' native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
