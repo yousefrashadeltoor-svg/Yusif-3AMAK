@@ -34,7 +34,7 @@ jobs:
           test -s native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
           grep -Fq 'setContent { DayflowApp(repository) }' native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
           grep -Fq 'id("org.jetbrains.kotlin.plugin.compose")' native-dayflow/build.gradle.kts
-          if grep -R -n -E 'android.webkit.WebView|com.getcapacitor|BridgeActivity|capacitor-android' native-dayflow/app native-dayflow/build.gradle.kts; then
+          if grep -R -n -E 'android\.webkit\.WebView|com\.getcapacitor|BridgeActivity|capacitor-android' native-dayflow/app native-dayflow/build.gradle.kts; then
             echo 'The native app source must not contain a WebView or Capacitor launcher.' >&2
             exit 1
           fi
@@ -75,8 +75,7 @@ jobs:
           BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
           "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
           BADGING="$("$BUILD_TOOLS/aapt" dump badging "$APK")"
-          printf '%s
-' "$BADGING" | grep -F "package: name='app.dayflow.android'"
+          printf '%s' "$BADGING" | grep -F "package: name='app.dayflow.android'"
           unzip -t "$APK" >/dev/null
           unzip -p "$APK" classes.dex | strings > build-output/native-dex-strings.txt
           grep -q 'androidx/compose' build-output/native-dex-strings.txt
