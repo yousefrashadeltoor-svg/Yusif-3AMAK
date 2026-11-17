@@ -215,10 +215,38 @@ jobs:
               'android:foregroundServiceType="specialUse" tools:targetApi="34">',
               1
           )
+          drawable = app / "res/drawable"
+          drawable.mkdir(parents=True, exist_ok=True)
+          icon_path = drawable / "dayflow_app_icon.xml"
+          icon_path.write_text("""<vector xmlns:android="http://schemas.android.com/apk/res/android"
+              android:width="48dp"
+              android:height="48dp"
+              android:viewportWidth="48"
+              android:viewportHeight="48">
+              <path android:fillColor="#1D222B" android:pathData="M0,0h48v48H0z" />
+              <path android:fillColor="#C4A46A" android:pathData="M9,10h30v29H9z" />
+              <path android:fillColor="#1D222B" android:pathData="M12,18h24v18H12z" />
+              <path android:fillColor="#1D222B" android:pathData="M14,6h3v9h-3z M31,6h3v9h-3z" />
+              <path android:fillColor="#C4A46A" android:pathData="M17,23h4v4h-4z M24,23h4v4h-4z M17,30h4v4h-4z M24,30h4v4h-4z" />
+          </vector>
+          """, encoding="utf-8")
+          source = source.replace(
+              'android:icon="@android:drawable/ic_menu_today"',
+              'android:icon="@drawable/dayflow_app_icon"',
+              1
+          )
+          source = source.replace(
+              'android:roundIcon="@android:drawable/ic_menu_today"',
+              'android:roundIcon="@drawable/dayflow_app_icon"',
+              1
+          )
           if 'tools:targetApi="27"' not in source or 'tools:targetApi="34"' not in source:
               raise SystemExit("Manifest API-level annotations were not applied.")
+          if 'android:icon="@drawable/dayflow_app_icon"' not in source or 'android:roundIcon="@drawable/dayflow_app_icon"' not in source:
+              raise SystemExit("Local DAYFLOW launcher icon was not connected to AndroidManifest.xml.")
           manifest.write_text(source, encoding="utf-8")
           ET.parse(manifest)
+          ET.parse(icon_path)
           ET.parse(base_styles)
           ET.parse(qualified / "styles.xml")
           if "windowLightNavigationBar" in base_styles.read_text(encoding="utf-8"):
@@ -229,6 +257,8 @@ jobs:
           if grep -Fq 'windowLightNavigationBar' native-dayflow/app/src/main/res/values/styles.xml; then exit 1; fi
           grep -Fq 'tools:targetApi="27"' native-dayflow/app/src/main/AndroidManifest.xml
           grep -Fq 'tools:targetApi="34"' native-dayflow/app/src/main/AndroidManifest.xml
+          grep -Fq 'android:icon="@drawable/dayflow_app_icon"' native-dayflow/app/src/main/AndroidManifest.xml
+          test -s native-dayflow/app/src/main/res/drawable/dayflow_app_icon.xml
           # RemoteViews only accepts platform-supported widgets; replace the decorative raw View divider with TextView.
           python3 - <<'PY'
           from pathlib import Path
