@@ -151,6 +151,25 @@ jobs:
           grep -Fq 'import app.dayflow.android.data.formatClock' native-dayflow/app/src/main/java/app/dayflow/android/system/DayflowWaterWidgetProvider.kt
           grep -Fq 'Connected AI chat is not enabled in this native build.' native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
           grep -Fq 'Connected AI chat is not enabled in this native build."' native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
+          # Compose UI testing uses assertIsDisplayed; assertExists is not part of this test API surface.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt")
+          source = path.read_text(encoding="utf-8")
+          source = source.replace(
+              "import androidx.compose.ui.test.assertExists",
+              "import androidx.compose.ui.test.assertIsDisplayed",
+          )
+          source = source.replace(".assertExists()", ".assertIsDisplayed()")
+          if "assertExists" in source:
+              raise SystemExit("Unsupported assertExists call remains in native UI test.")
+          if "import androidx.compose.ui.test.assertIsDisplayed" not in source or ".assertIsDisplayed()" not in source:
+              raise SystemExit("Compose UI test visibility assertions were not migrated.")
+          path.write_text(source, encoding="utf-8")
+          print("Updated native UI tests to supported Compose visibility assertions.")
+          PY
+          grep -Fq 'import androidx.compose.ui.test.assertIsDisplayed' native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt
+          if grep -Fq 'assertExists' native-dayflow/app/src/androidTest/java/app/dayflow/android/DayflowNativeUiTest.kt; then exit 1; fi
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
           test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
