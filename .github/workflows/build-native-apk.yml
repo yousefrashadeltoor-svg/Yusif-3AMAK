@@ -28,12 +28,36 @@ jobs:
           gzip -t /tmp/dayflow-native-source.tar.gz
           mkdir -p native-dayflow build-output
           tar -xzf /tmp/dayflow-native-source.tar.gz -C native-dayflow
+          # Pin AndroidX versions to the Android 15 / AGP 8.13 compatibility line.
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path("native-dayflow/app/build.gradle.kts")
+          source = path.read_text(encoding="utf-8")
+          versions = {
+              "androidx.compose:compose-bom:2026.09.00": "androidx.compose:compose-bom:2025.08.00",
+              "androidx.activity:activity-compose:1.13.0": "androidx.activity:activity-compose:1.10.1",
+              "androidx.core:core-ktx:1.17.0": "androidx.core:core-ktx:1.15.0",
+          }
+          for old, new in versions.items():
+              if old in source:
+                  source = source.replace(old, new, 1)
+              elif new not in source:
+                  raise SystemExit(f"Missing expected AndroidX dependency declaration: {old}")
+          for value in versions.values():
+              if value not in source:
+                  raise SystemExit(f"AndroidX compatibility pin was not applied: {value}")
+          path.write_text(source, encoding="utf-8")
+          print("Pinned Compose, Activity and Core to versions compatible with compileSdk 35 / AGP 8.13.")
+          PY
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
           test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
           test -s native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
           grep -Fq 'setContent { DayflowApp(repository) }' native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
           grep -Fq 'id("org.jetbrains.kotlin.plugin.compose")' native-dayflow/build.gradle.kts
+          grep -Fq 'androidx.compose:compose-bom:2025.08.00' native-dayflow/app/build.gradle.kts
+          grep -Fq 'androidx.activity:activity-compose:1.10.1' native-dayflow/app/build.gradle.kts
+          grep -Fq 'androidx.core:core-ktx:1.15.0' native-dayflow/app/build.gradle.kts
           if grep -R -n -E 'android\.webkit\.WebView|com\.getcapacitor|BridgeActivity|capacitor-android' native-dayflow/app native-dayflow/build.gradle.kts; then
             echo 'The native app source must not contain a WebView or Capacitor launcher.' >&2
             exit 1
