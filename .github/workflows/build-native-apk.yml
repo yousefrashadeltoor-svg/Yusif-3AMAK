@@ -229,6 +229,29 @@ jobs:
           if grep -Fq 'windowLightNavigationBar' native-dayflow/app/src/main/res/values/styles.xml; then exit 1; fi
           grep -Fq 'tools:targetApi="27"' native-dayflow/app/src/main/AndroidManifest.xml
           grep -Fq 'tools:targetApi="34"' native-dayflow/app/src/main/AndroidManifest.xml
+          # RemoteViews only accepts platform-supported widgets; replace the decorative raw View divider with TextView.
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          path = Path("native-dayflow/app/src/main/res/layout/dayflow_widget_water.xml")
+          source = path.read_text(encoding="utf-8")
+          old = '<View android:layout_width="match_parent" android:layout_height="1dp"'
+          new = '<TextView android:layout_width="match_parent" android:layout_height="1dp" android:text=""'
+          if old in source:
+              source = source.replace(old, new, 1)
+          elif new not in source:
+              raise SystemExit("Water widget divider element not found; refusing an unsafe layout edit.")
+          if "<View" in source or "androidx." in source or "ConstraintLayout" in source:
+              raise SystemExit("Water widget still contains a view unsupported by RemoteViews.")
+          ET.fromstring(source)
+          for view_id in ("water_widget_root", "water_widget_date", "water_widget_amount", "water_widget_progress", "water_widget_alarm", "water_widget_alarm_count"):
+              if f'@+id/{view_id}' not in source:
+                  raise SystemExit(f"Water widget lost required RemoteViews target id: {view_id}")
+          path.write_text(source, encoding="utf-8")
+          print("Water widget layout now contains RemoteViews-compatible platform widgets only.")
+          PY
+          grep -Fq '<TextView android:layout_width="match_parent" android:layout_height="1dp" android:text=""' native-dayflow/app/src/main/res/layout/dayflow_widget_water.xml
+          if grep -Fq '<View' native-dayflow/app/src/main/res/layout/dayflow_widget_water.xml; then exit 1; fi
           tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
           (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
           test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
