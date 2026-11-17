@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APK="\${1:?APK path required}"
+APK="${1:?APK path required}"
 test -s "$APK"
 
 adb install -r "$APK"
