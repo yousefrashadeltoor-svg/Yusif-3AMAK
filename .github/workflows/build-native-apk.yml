@@ -1,0 +1,112 @@
+name: Build Native DAYFLOW APK
+run-name: DAYFLOW Jetpack Compose — ${{ github.ref_name }}
+
+on:
+  push:
+    branches: [repair/widget-native-state-bridge]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-apk:
+    name: Build, inspect and cold-launch native DAYFLOW
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract native Android project
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .github/native-dayflow-source.part-00
+          test -s .github/native-dayflow-source.part-10
+          cat .github/native-dayflow-source.part-* | base64 --decode > /tmp/dayflow-native-source.tar.gz
+          gzip -t /tmp/dayflow-native-source.tar.gz
+          mkdir -p native-dayflow build-output
+          tar -xzf /tmp/dayflow-native-source.tar.gz -C native-dayflow
+          tar -czf build-output/DAYFLOW-native-source.tar.gz -C native-dayflow .
+          (cd native-dayflow && zip -qr ../build-output/DAYFLOW-native-source.zip .)
+          test -s native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
+          test -s native-dayflow/app/src/main/java/app/dayflow/android/ui/DayflowApp.kt
+          grep -Fq 'setContent { DayflowApp(repository) }' native-dayflow/app/src/main/java/app/dayflow/android/MainActivity.kt
+          grep -Fq 'id("org.jetbrains.kotlin.plugin.compose")' native-dayflow/build.gradle.kts
+          if grep -R -n -E 'android.webkit.WebView|com.getcapacitor|BridgeActivity|capacitor-android' native-dayflow/app native-dayflow/build.gradle.kts; then
+            echo 'The native app source must not contain a WebView or Capacitor launcher.' >&2
+            exit 1
+          fi
+          echo 'Verified: launcher is Kotlin + Jetpack Compose and no Capacitor/WebView source is bundled.'
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android SDK packages
+        run: sdkmanager --install "platform-tools" "platforms;android-35" "build-tools;35.0.0"
+
+      - name: Set up Gradle 8.13
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - name: Compile native Compose application
+        shell: bash
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --stacktrace -p native-dayflow :app:assembleDebug :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:lintDebug
+          cp native-dayflow/app/build/outputs/apk/debug/app-debug.apk build-output/DAYFLOW-native-debug.apk
+          test -s build-output/DAYFLOW-native-debug.apk
+
+      - name: Verify APK package, signature and native composition
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="$GITHUB_WORKSPACE/build-output/DAYFLOW-native-debug.apk"
+          BUILD_TOOLS="$ANDROID_HOME/build-tools/35.0.0"
+          "$BUILD_TOOLS/apksigner" verify --verbose "$APK"
+          BADGING="$("$BUILD_TOOLS/aapt" dump badging "$APK")"
+          printf '%s
+' "$BADGING" | grep -F "package: name='app.dayflow.android'"
+          unzip -t "$APK" >/dev/null
+          unzip -p "$APK" classes.dex | strings > build-output/native-dex-strings.txt
+          grep -q 'androidx/compose' build-output/native-dex-strings.txt
+          if grep -E -q 'com/getcapacitor|BridgeActivity|android/webkit/WebView' build-output/native-dex-strings.txt; then
+            echo 'A Capacitor or WebView class was found in the APK.' >&2
+            exit 1
+          fi
+          echo "Verified native APK size: $(stat -c%s "$APK") bytes"
+
+      - name: Cold-launch native DAYFLOW on Android Emulator
+        uses: ReactiveCircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d
+        with:
+          api-level: 35
+          target: google_atd
+          arch: x86_64
+          profile: pixel_5
+          emulator-boot-timeout: 300
+          emulator-options: -no-window -no-snapshot -noaudio -no-boot-anim -gpu swiftshader_indirect -camera-back none -camera-front none
+          disable-animations: true
+          script: bash "${{ github.workspace }}/.github/scripts/native-emulator-smoke-test.sh" "${{ github.workspace }}/build-output/DAYFLOW-native-debug.apk"
+
+      - name: Upload native APK and full project source
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: DAYFLOW-NATIVE-APK
+          path: |
+            build-output/DAYFLOW-native-debug.apk
+            build-output/native-dex-strings.txt
+            build-output/DAYFLOW-native-source.tar.gz
+            build-output/DAYFLOW-native-source.zip
+          if-no-files-found: error
+          retention-days: 30

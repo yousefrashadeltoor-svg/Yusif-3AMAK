@@ -1,9 +1,7 @@
-name: Build DAYFLOW Android APK
-run-name: DAYFLOW verified APK — ${{ github.ref_name }}
+name: LEGACY — Capacitor WebView (not the native DAYFLOW app)
+run-name: LEGACY WebView wrapper — not a native release
 
 on:
-  push:
-    branches: [repair/widget-native-state-bridge]
   workflow_dispatch:
 
 permissions:
@@ -11,12 +9,16 @@ permissions:
 
 jobs:
   build-apk:
-    name: Build and verify DAYFLOW Android APK
+    name: Build legacy WebView wrapper (not native)
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Legacy notice — this workflow creates a WebView wrapper only
+        shell: bash
+        run: echo 'WARNING: this legacy workflow is not the native Compose application. Use build-native-apk.yml for native Android builds.'
 
       - name: Inspect and extract project archive
         id: inspect
@@ -198,7 +200,7 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: DAYFLOW-verified-APK
+          name: LEGACY-WEBVIEW-NOT-NATIVE
           path: |
             build-output/Yusif-3AMAK-debug.apk
             build-output/inspection.txt

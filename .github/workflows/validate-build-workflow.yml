@@ -1,4 +1,4 @@
-name: Validate Android build workflow syntax
+name: Validate Android native build workflows
 
 on:
   push:
@@ -15,37 +15,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Parse workflow YAML and verify its execution graph
+      - name: Validate native project archive and Compose launcher
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -s .github/native-dayflow-source.part-00
+          test -s .github/native-dayflow-source.part-10
+          cat .github/native-dayflow-source.part-* | base64 --decode > /tmp/dayflow-native-source.tar.gz
+          gzip -t /tmp/dayflow-native-source.tar.gz
+          mkdir -p /tmp/native-dayflow-check
+          tar -xzf /tmp/dayflow-native-source.tar.gz -C /tmp/native-dayflow-check
+          grep -Fq 'setContent { DayflowApp(repository) }' /tmp/native-dayflow-check/app/src/main/java/app/dayflow/android/MainActivity.kt
+          grep -Fq 'id("org.jetbrains.kotlin.plugin.compose")' /tmp/native-dayflow-check/build.gradle.kts
+          grep -Fq 'androidx.compose.material3:material3' /tmp/native-dayflow-check/app/build.gradle.kts
+          if grep -R -n -E 'android.webkit.WebView|com.getcapacitor|BridgeActivity|capacitor-android' /tmp/native-dayflow-check/app /tmp/native-dayflow-check/build.gradle.kts; then
+            echo 'WebView/Capacitor found in the native Compose project.' >&2
+            exit 1
+          fi
+          echo 'Native Compose source archive passes structural checks.'
+
+      - name: Parse and validate native workflow graph
         shell: bash
         run: |
           ruby - <<'RUBY'
           require "yaml"
-          workflow_path = ".github/workflows/build-apk.yml"
-          data = YAML.load_file(workflow_path)
-          puts "Root keys: #{data.keys.inspect}"
+          path = ".github/workflows/build-native-apk.yml"
+          data = YAML.load_file(path)
           triggers = data["on"] || data[true]
-          abort "Workflow triggers are missing or invalid" unless triggers.is_a?(Hash)
-          abort "Push trigger is missing" unless triggers.key?("push")
+          abort "Native workflow must support push and manual dispatch" unless triggers.is_a?(Hash) && triggers.key?("push") && triggers.key?("workflow_dispatch")
           jobs = data["jobs"]
-          puts "Jobs: #{jobs&.keys&.inspect}"
-          abort "GitHub Actions jobs map is missing or empty" unless jobs.is_a?(Hash) && !jobs.empty?
-          job = jobs["build-apk"]
-          abort "build-apk job is missing" unless job.is_a?(Hash)
-          puts "Job keys: #{job.keys.inspect}"
-          steps = job["steps"]
-          abort "build-apk steps must be a non-empty array" unless steps.is_a?(Array) && !steps.empty?
-          puts "Top name: #{data['name'].inspect}"
-          puts "Trigger keys: #{triggers.keys.inspect}"
-          puts "Steps count: #{steps.length}"
-          steps.each_with_index do |step, index|
-            abort "Step #{index + 1} is not a mapping" unless step.is_a?(Hash)
-            bad = step.keys - %w[name id if uses run shell with env working-directory timeout-minutes continue-on-error]
-            abort "Step #{index + 1} has unknown keys: #{bad.inspect}" unless bad.empty?
-            puts "#{index + 1}: name=#{step['name'].inspect} keys=#{step.keys.inspect} run_type=#{step['run'].class if step.key?('run')} uses=#{step['uses'].inspect if step.key?('uses')}"
-            abort "Step #{index + 1} run is not text" if step.key?("run") && !step["run"].is_a?(String)
-            abort "Step #{index + 1} uses is not text" if step.key?("uses") && !step["uses"].is_a?(String)
-          end
-          puts "YAML and core job/step structure valid"
+          abort "native-apk job missing" unless jobs.is_a?(Hash) && jobs["native-apk"].is_a?(Hash)
+          steps = jobs["native-apk"]["steps"]
+          abort "Native workflow has no steps" unless steps.is_a?(Array) && !steps.empty?
+          abort "Compose build step missing" unless steps.any? { |s| s["name"].to_s.include?("Compile native Compose") }
+          abort "Emulator step missing" unless steps.any? { |s| s["uses"].to_s.start_with?("ReactiveCircus/android-emulator-runner@") }
+          puts "Native workflow structure valid (#{steps.length} steps)."
           RUBY
 
       - name: Install pinned actionlint
@@ -58,31 +62,19 @@ jobs:
           sudo install /tmp/actionlint /usr/local/bin/actionlint
           actionlint -version
 
-      - name: Lint GitHub Actions workflow semantics
-        shell: bash
+      - name: Lint all GitHub Actions workflows
         run: actionlint -color .github/workflows/*.yml
 
-      - name: Validate Android build helper scripts
+      - name: Validate native emulator smoke-test script
         shell: bash
         run: |
           set -euo pipefail
-          bash -n .github/scripts/build-dayflow-android.sh
-          bash -n .github/scripts/build-dayflow-android.sh
-          bash -n .github/scripts/emulator-smoke-test.sh
-          python3 -m py_compile \
-            .github/scripts/register-dayflow-bridge.py \
-            .github/scripts/patch-app-features.py \
-            .github/scripts/patch-native-alarms.py \
-            .github/scripts/patch-native-alarm-snooze.py \
-            .github/scripts/patch-native-download-cancel.py \
-            .github/scripts/patch-native-task-reminders.py \
-            .github/scripts/patch-native-sound-picker.py
-          echo "Android build and emulator scripts passed syntax validation."
+          bash -n .github/scripts/native-emulator-smoke-test.sh
+          ruby -ryaml -e 'w=YAML.load_file(".github/workflows/build-native-apk.yml"); s=w.fetch("jobs").fetch("native-apk").fetch("steps").find { |x| x["uses"].to_s.start_with?("ReactiveCircus/android-emulator-runner@") }; c=s&.dig("with","script").to_s.strip; abort "Emulator must use one complete smoke-test command" unless c.lines.length == 1 && c.include?("native-emulator-smoke-test.sh")'
+          echo "Native emulator smoke-test entrypoint is valid."
 
-      - name: Validate emulator runner invokes one complete Bash script
+      - name: Ensure legacy WebView workflow is not push-triggered
         shell: bash
         run: |
-          set -euo pipefail
-          ruby -ryaml -e 'workflow = YAML.load_file(".github/workflows/build-apk.yml"); steps = workflow.fetch("jobs").fetch("build-apk").fetch("steps"); step = steps.find { |item| item["uses"].to_s.start_with?("ReactiveCircus/android-emulator-runner@") }; script = step&.dig("with", "script").to_s.strip; abort "Emulator step must call the committed smoke-test script in one command" unless script.lines.length == 1 && script.include?(".github/scripts/emulator-smoke-test.sh")'
-          bash -n .github/scripts/emulator-smoke-test.sh
-          echo "Emulator smoke test is one complete Bash invocation and passes bash -n."
+          ruby -ryaml -e 'w=YAML.load_file(".github/workflows/build-apk.yml"); t=w["on"] || w[true]; abort "Legacy WebView workflow must not run on pushes" if t.is_a?(Hash) && t.key?("push")'
+          echo "Legacy WebView workflow is manual-only."
