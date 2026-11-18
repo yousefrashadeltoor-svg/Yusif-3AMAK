@@ -294,6 +294,12 @@ jobs:
                   raise SystemExit("Compose performClick import anchor missing.")
               source = source.replace(click_import, click_import + chr(10) + scroll_import, 1)
           for old, new in (
+              ('compose.onNodeWithContentDescription("المنبهات").performClick()',
+               'compose.onNodeWithText("المنبهات").performClick()'),
+              ('compose.onNodeWithContentDescription("حسابي").performClick()',
+               'compose.onNodeWithText("حسابي").performClick()'),
+              ('compose.onNodeWithText("الأدوات").performClick()',
+               'compose.onNodeWithText("الأدوات").performClick()'),
               ('compose.onNodeWithText("ويدجتس الشاشة الرئيسية").assertIsDisplayed()',
                'compose.onNodeWithText("ويدجتس الشاشة الرئيسية").performScrollTo().assertIsDisplayed()'),
               ('compose.onNodeWithText("إضافة ملخص اليوم").assertIsDisplayed()',
